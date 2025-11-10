@@ -4,6 +4,7 @@ import { HourlyInspectionModel } from "@/models/hourly-inspection-model";
 import { ProductionInputModel } from "@/models/production-input-model";
 import { RegisterModel } from "@/models/register-model";
 import { userModel } from "@/models/user-model";
+import TopThree from "../components/TopThree";
 
 // If you want fresh data during dev
 export const revalidate = 0;
@@ -75,12 +76,21 @@ export default async function HourlyDashboard() {
   const safeUsers = serializePlain(users);
 
   return (
-    <HourlyDashboardComponent
-      hourlyData={safeHourly}
-      allHourlyData={safeHourly}
-      productionData={safeProduction}
-      registerData={safeRegister}
-      users={safeUsers}
-    />
+    <>
+      <HourlyDashboardComponent
+        hourlyData={safeHourly}
+        allHourlyData={safeHourly}
+        productionData={safeProduction}
+        registerData={safeRegister}
+        users={safeUsers}
+      />
+      <TopThree
+        hourlyData={safeHourly}
+        allHourlyData={safeHourly}
+        productionData={safeProduction}
+        registerData={safeRegister}
+        users={safeUsers}
+      />
+    </>
   );
 }
