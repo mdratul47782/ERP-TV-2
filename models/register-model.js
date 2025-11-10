@@ -1,16 +1,18 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 
-const registerSchema = new Schema(
+const registerSchema = new mongoose.Schema(
   {
     buyer: { type: String, required: true },
     building: { type: String, required: true },
     floor: { type: String, required: true },
     line: { type: String, required: true },
-    created_by: { type: String, required: true }, // ✅ must exist
+    style: { type: String, required: true },
+    item: { type: String, required: true },
+    color: { type: String, required: true },
+    created_by: { type: String, required: true },
   },
   { timestamps: true }
 );
 
 export const RegisterModel =
-  mongoose.models.RegisterModel ||
-  mongoose.model("RegisterModel", registerSchema);
+  mongoose.models.Register || mongoose.model("Register", registerSchema);
