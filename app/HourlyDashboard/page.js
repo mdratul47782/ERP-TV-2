@@ -1,13 +1,14 @@
-// app/HourlyDashboard/page.js (server component)
-
-import HourlyDashboardComponent from "@/app/components/HourlyDashboardComponent";
-import mongoose from "mongoose";
+// app/HourlyDashboard/page.js
+import HourlyDashboardComponent from "../components/HourlyDashboardComponent";
 import { HourlyInspectionModel } from "@/models/hourly-inspection-model";
 import { ProductionInputModel } from "@/models/production-input-model";
 import { RegisterModel } from "@/models/register-model";
 import { userModel } from "@/models/user-model";
 
-// ---- serializers ----
+// If you want fresh data during dev
+export const revalidate = 0;
+
+/* ------------ serializers ------------ */
 function serializeHourly(docs) {
   return docs.map((doc) => ({
     ...doc,
@@ -54,28 +55,29 @@ function serializeRegister(docs) {
   }));
 }
 
+// generic fallback for other collections (removes ObjectId/Date)
 function serializePlain(docs) {
-  // generic fall-back for other collections (productionData, users)
   return JSON.parse(JSON.stringify(docs ?? []));
 }
 
+/* ------------ single default export (server component) ------------ */
 export default async function HourlyDashboard() {
-  // --- queries ---
-  const hourlyData = await HourlyInspectionModel.find({}).lean();
-  const productionData = await ProductionInputModel.find({}).lean();
-  const registerData = await RegisterModel.find({}).lean();
+  // Queries
+  const hourly = await HourlyInspectionModel.find({}).lean();
+  const production = await ProductionInputModel.find({}).lean();
+  const registers = await RegisterModel.find({}).lean();
   const users = await userModel.find({}).lean();
 
-  // --- serialize for client component ---
-  const safeHourly = serializeHourly(hourlyData);
-  const safeRegister = serializeRegister(registerData);
-  const safeProduction = serializePlain(productionData);
+  // Serialize everything for client components
+  const safeHourly = serializeHourly(hourly);
+  const safeRegister = serializeRegister(registers);
+  const safeProduction = serializePlain(production);
   const safeUsers = serializePlain(users);
 
   return (
     <HourlyDashboardComponent
       hourlyData={safeHourly}
-      allHourlyData={safeHourly}     // or remove if you don’t need both
+      allHourlyData={safeHourly}
       productionData={safeProduction}
       registerData={safeRegister}
       users={safeUsers}
