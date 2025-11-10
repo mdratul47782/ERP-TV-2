@@ -1,13 +1,20 @@
-// app/HourlyDashboard/page.js (server component)
-
-import HourlyDashboardComponent from "@/app/components/HourlyDashboardComponent";
 import mongoose from "mongoose";
 import { HourlyInspectionModel } from "@/models/hourly-inspection-model";
 import { ProductionInputModel } from "@/models/production-input-model";
 import { RegisterModel } from "@/models/register-model";
 import { userModel } from "@/models/user-model";
+import InspectionTopInput from "../../components/InspectionTopInput";
+import DefectEntryForm from "../../components/DefectEntryForm";
 
-// ---- serializers ----
+// Disable ISR (always fetch fresh data)
+export const revalidate = 0;
+
+// ✅ Helper: safely convert Mongo/Mongoose docs to plain JSON
+function safeJson(data) {
+  return JSON.parse(JSON.stringify(data));
+}
+
+// ✅ Helper: deep serialization for hourly docs
 function serializeHourly(docs) {
   return docs.map((doc) => ({
     ...doc,
@@ -38,47 +45,39 @@ function serializeHourly(docs) {
   }));
 }
 
-function serializeRegister(docs) {
-  return docs.map((doc) => ({
-    _id: doc._id?.toString(),
-    buyer: doc.buyer || "",
-    building: doc.building || "",
-    floor: doc.floor || "",
-    line: doc.line || "",
-    created_by: doc.created_by || "",
-    style: doc.style || "",
-    item: doc.item || "",
-    color: doc.color || "",
-    createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
-    updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
-  }));
-}
+export default async function DailyInProcessedEndLineInspectionReport({ params }) {
+  const { id } = await params; // For Next 15; use params.id on 14
+  const registerObjectId = new mongoose.Types.ObjectId(id);
 
-function serializePlain(docs) {
-  // generic fall-back for other collections (productionData, users)
-  return JSON.parse(JSON.stringify(docs ?? []));
-}
+  // Fetch data
+  const [hourlyData, allHourly, productionData, registerData, users] =
+    await Promise.all([
+      HourlyInspectionModel.find({ "lineInfo.registerId": registerObjectId }).lean(),
+      HourlyInspectionModel.find({}).lean(),
+      ProductionInputModel.find({}).lean(),
+      RegisterModel.find({}).lean(),
+      userModel.find({}).lean(),
+    ]);
 
-export default async function HourlyDashboard() {
-  // --- queries ---
-  const hourlyData = await HourlyInspectionModel.find({}).lean();
-  const productionData = await ProductionInputModel.find({}).lean();
-  const registerData = await RegisterModel.find({}).lean();
-  const users = await userModel.find({}).lean();
+  // Serialize all Mongo objects to safe JSON
+  const safeAllHourly = serializeHourly(allHourly);
+  const safeRegisterData = safeJson(registerData);
+  const safeProductionData = safeJson(productionData);
+  const safeUsers = safeJson(users);
 
-  // --- serialize for client component ---
-  const safeHourly = serializeHourly(hourlyData);
-  const safeRegister = serializeRegister(registerData);
-  const safeProduction = serializePlain(productionData);
-  const safeUsers = serializePlain(users);
+  console.log("✅ Server-side data fetched successfully");
 
   return (
-    <HourlyDashboardComponent
-      hourlyData={safeHourly}
-      allHourlyData={safeHourly}     // or remove if you don’t need both
-      productionData={safeProduction}
-      registerData={safeRegister}
-      users={safeUsers}
-    />
+    <div className="text-black">
+      {/* ✅ All data is now serializable */}
+      <InspectionTopInput id={id} registerData={safeRegisterData} />
+      <DefectEntryForm
+        id={id}
+        hourlyData={safeAllHourly}
+        productionData={safeProductionData}
+        registerData={safeRegisterData}
+        users={safeUsers}
+      />
+    </div>
   );
 }
