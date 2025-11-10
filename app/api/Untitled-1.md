@@ -1,0 +1,60 @@
+```
+└── 📁my-app
+
+    └── 📁app
+        └── 📁actions
+            ├── index.js
+        └── 📁api
+            └── 📁register
+                ├── route.js
+        └── 📁components
+            └── 📁auth
+                ├── LoginForm.jsx
+                ├── RegistrationForm.jsx
+                ├── SignInOut.jsx
+            ├── DefectEntryForm.jsx
+            ├── InspectionTopInput.jsx
+            ├── LineInfo.jsx
+        └── 📁contexts
+            ├── index.js
+        └── 📁DailyInProcessedEndLineInspectionReport
+            ├── page.js
+        └── 📁hooks
+            ├── useAuth.js
+        └── 📁login
+            ├── page.js
+        └── 📁providers
+            ├── AuthProvider.js
+        └── 📁register
+            ├── page.js
+        ├── favicon.ico
+        ├── globals.css
+        ├── layout.js
+        ├── page.js
+    └── 📁db
+        ├── queries.js
+    └── 📁models
+        ├── register-model.js
+        ├── user-model.js
+    └── 📁public
+        ├── 1630632533544 (2).jpg
+        ├── file.svg
+        ├── globe.svg
+        ├── HKD.png
+        ├── next.svg
+        ├── vercel.svg
+        ├── window.svg
+    └── 📁services
+        ├── mongo.js
+    └── 📁utils
+        ├── data-util.js
+    ├── .env
+    ├── .gitignore
+    ├── eslint.config.mjs
+    ├── jsconfig.json
+    ├── next.config.mjs
+    ├── package-lock.json
+    ├── package.json
+    ├── postcss.config.mjs
+    └── README.md
+```
