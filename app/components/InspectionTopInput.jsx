@@ -1,209 +1,102 @@
 "use client";
-
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-
-function todayYYYYMMDD() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-const initialForm = {
-  building: "",
-  floor: "",
-  line: "",
-  buyer: "",
-  style: "",
-  item: "",
-  color: "",
-};
 
 export default function InputRow() {
   const { auth } = useAuth();
 
-  const [form, setForm] = useState(initialForm);
-  const [record, setRecord] = useState(null); // সেভড ডকুমেন্ট
-  const [editing, setEditing] = useState(true);
+  const [form, setForm] = useState({
+    building: "",
+    floor: "",
+    line: "",
+    buyer: "",
+    style: "",
+    item: "",
+    color: "",
+  });
+
+  const [saved, setSaved] = useState(null);     // holds the last saved/updated row (shows in box)
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const theDate = useMemo(() => todayYYYYMMDD(), []);
-
-  // প্রথম লোডে আজকের টপ ইনপুট লোড
+  // Prefill buyer from auth once, if available
   useEffect(() => {
-    const load = async () => {
-      if (!auth?.id) return;
-      try {
-        setLoading(true);
-        setErr("");
-        const qs = new URLSearchParams({ userId: auth.id, date: theDate });
-        const res = await fetch(`/api/inspection-top?${qs.toString()}`, { cache: "no-store" });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json?.message || "Failed to load");
-        const first = (json.data || [])[0] || null;
-        if (first) {
-          setRecord(first);
-          setForm({
-            building: first.building || "",
-            floor: first.floor || "",
-            line: first.line || "",
-            buyer: first.buyer || "",
-            style: first.style || "",
-            item: first.item || "",
-            color: first.color || "",
-          });
-          setEditing(false); // সেভড থাকলে ভিউ মোড
-        } else {
-          setEditing(true); // না থাকলে এডিট মোড
-        }
-      } catch (e) {
-        setErr(e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [auth?.id, theDate]);
-
-  const onChange = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
-
-  const onSave = async () => {
-    if (!auth?.id) {
-      alert("Please login first.");
-      return;
+    if (auth?.user_name) {
+      setForm(f => ({ ...f, buyer: f.buyer || auth.user_name }));
     }
+  }, [auth?.user_name]);
+
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  async function handlePost() {
     setLoading(true);
+    setErr("");
     try {
-      // নতুন হলে POST (upsert), নাহলে PUT
-      const isUpdate = !!record?._id;
-      const url = isUpdate ? `/api/inspection-top/${record._id}` : "/api/inspection-top";
-      const method = isUpdate ? "PUT" : "POST";
-
-      const payload = isUpdate
-        ? { ...form } // PUT-এ শুধু ফিল্ডগুলো
-        : { userId: auth.id, userName: auth.user_name, ...form, reportDate: theDate };
-
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("/api/rows", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        credentials: "include", // works if you use cookie-based auth; harmless otherwise
+        body: JSON.stringify({
+          ...form,
+          // attach minimal user info; do NOT send password
+          createdBy: auth?.user_name || "anonymous",
+          userId: auth?.id,
+        }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Save failed");
 
-      const doc = json.data;
-      setRecord(doc);
-      setForm({
-        building: doc.building || "",
-        floor: doc.floor || "",
-        line: doc.line || "",
-        buyer: doc.buyer || "",
-        style: doc.style || "",
-        item: doc.item || "",
-        color: doc.color || "",
-      });
-      setEditing(false);
-      alert("✅ Saved!");
+      if (!res.ok) throw new Error(`POST failed (${res.status})`);
+      const data = await res.json();
+      setSaved(data); // show in box
     } catch (e) {
-      alert(`❌ Save failed: ${e.message}`);
+      setErr(e.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const onEdit = () => setEditing(true);
-
-  const onCancel = () => {
-    if (record) {
-      // আগের সেভড ভ্যালুতে রিসেট
-      setForm({
-        building: record.building || "",
-        floor: record.floor || "",
-        line: record.line || "",
-        buyer: record.buyer || "",
-        style: record.style || "",
-        item: record.item || "",
-        color: record.color || "",
-      });
-      setEditing(false);
-    } else {
-      setForm(initialForm);
-      setEditing(true);
-    }
-  };
-
-  const onDelete = async () => {
-    if (!record?._id) return;
-    if (!confirm("Delete this header info?")) return;
+  async function handlePatch() {
+    if (!saved?.id) return; // nothing to patch yet
     setLoading(true);
+    setErr("");
     try {
-      const res = await fetch(`/api/inspection-top/${record._id}`, { method: "DELETE" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Delete failed");
-      setRecord(null);
-      setForm(initialForm);
-      setEditing(true);
-      alert("🗑️ Deleted.");
+      const res = await fetch(`/api/rows/${saved.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error(`PATCH failed (${res.status})`);
+      const data = await res.json();
+      setSaved(data); // refresh box with updated values
     } catch (e) {
-      alert(`❌ Delete failed: ${e.message}`);
+      setErr(e.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  function resetForm() {
+    setForm({
+      building: "",
+      floor: "",
+      line: "",
+      buyer: auth?.user_name || "",
+      style: "",
+      item: "",
+      color: "",
+    });
+  }
 
   return (
     <div className="w-full overflow-x-auto">
-      {/* টপ বার */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm text-gray-600">
-          {auth ? (
-            <>
-              Logged in as: <b>{auth.user_name}</b> &middot; <span>{theDate}</span>
-            </>
-          ) : (
-            <span className="text-red-600">Please login</span>
-          )}
-        </div>
+      {/* Tip: avoid logging sensitive info like passwords */}
+      {/* console.log("Authenticated user info:", auth); */}
 
-        <div className="space-x-2">
-          {editing ? (
-            <>
-              <button
-                onClick={onSave}
-                disabled={loading || !auth}
-                className="px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-60"
-              >
-                {loading ? "Saving..." : "Save"}
-              </button>
-              <button
-                onClick={onCancel}
-                className="px-3 py-1 rounded border text-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={onEdit}
-                className="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
-              >
-                Edit
-              </button>
-              {record?._id && (
-                <button
-                  onClick={onDelete}
-                  className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ইনপুট টেবিল (এডিটিংয়ের সময় সক্রিয়) */}
-      <table className="border border-gray-400 min-w-[900px] text-center">
+      <table className="border border-gray-400 w-full text-center">
         <thead>
           <tr className="bg-gray-100 text-sm">
             <th className="border border-gray-400 px-2 py-1">Building</th>
@@ -217,15 +110,22 @@ export default function InputRow() {
         </thead>
         <tbody>
           <tr>
-            {["building", "floor", "line", "buyer", "style", "item", "color"].map((key) => (
-              <td key={key} className="border border-gray-400 p-1">
+            {[
+              ["building", form.building],
+              ["floor", form.floor],
+              ["line", form.line],
+              ["buyer", form.buyer],
+              ["style", form.style],
+              ["item", form.item],
+              ["color", form.color],
+            ].map(([name, value]) => (
+              <td key={name} className="border border-gray-400 p-1">
                 <input
                   type="text"
-                  className="w-full border border-gray-300 rounded px-1 py-0.5 focus:outline-none disabled:bg-gray-100"
-                  value={form[key]}
-                  onChange={onChange(key)}
-                  disabled={!editing}
-                  placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                  name={name}
+                  value={value}
+                  onChange={onChange}
+                  className="w-full border border-gray-300 rounded px-1 py-0.5 focus:outline-none"
                 />
               </td>
             ))}
@@ -233,40 +133,59 @@ export default function InputRow() {
         </tbody>
       </table>
 
-      {/* সেভড কার্ড (ভিউ মোডে) */}
-      {!editing && record && (
-        <div className="mt-3 bg-white border rounded-lg p-3 shadow-sm">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Building:</span> <b>{record.building || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Floor:</span> <b>{record.floor || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Line:</span> <b>{record.line || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Buyer:</span> <b>{record.buyer || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Style:</span> <b>{record.style || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Item:</span> <b>{record.item || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Color:</span> <b>{record.color || "-"}</b>
-            </div>
-            <div className="bg-gray-50 p-2 rounded">
-              <span className="text-gray-600">Date:</span>{" "}
-              <b>{new Date(record.reportDate).toISOString().slice(0, 10)}</b>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          onClick={handlePost}
+          disabled={loading}
+          className="px-3 py-1 rounded border text-sm bg-blue-600 text-white disabled:opacity-60"
+        >
+          {loading ? "Saving..." : "Save (POST)"}
+        </button>
+
+        <button
+          onClick={handlePatch}
+          disabled={loading || !saved?.id}
+          className="px-3 py-1 rounded border text-sm bg-emerald-600 text-white disabled:opacity-60"
+        >
+          {loading ? "Updating..." : "Update (PATCH)"}
+        </button>
+
+        <button
+          onClick={resetForm}
+          disabled={loading}
+          className="px-3 py-1 rounded border text-sm bg-gray-100"
+        >
+          Reset
+        </button>
+      </div>
+
+      {err && (
+        <div className="mt-3 text-sm text-red-600">
+          {err}
+        </div>
+      )}
+
+      {/* Box that shows the saved/updated data */}
+      {saved && (
+        <div className="mt-4 rounded border bg-white shadow-sm">
+          <div className="px-3 py-2 border-b bg-gray-50 text-xs text-gray-600">
+            Saved Row • <span className="font-medium">ID:</span> {saved.id}
+          </div>
+          <div className="p-3 grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+            <div><span className="font-medium">Building:</span> {saved.building}</div>
+            <div><span className="font-medium">Floor:</span> {saved.floor}</div>
+            <div><span className="font-medium">Line:</span> {saved.line}</div>
+            <div><span className="font-medium">Buyer:</span> {saved.buyer}</div>
+            <div><span className="font-medium">Style:</span> {saved.style}</div>
+            <div><span className="font-medium">Item:</span> {saved.item}</div>
+            <div><span className="font-medium">Color:</span> {saved.color}</div>
+            <div className="col-span-full text-xs text-gray-500">
+              Created by: {saved.createdBy || "-"} {saved.createdAt ? `• ${new Date(saved.createdAt).toLocaleString()}` : ""}
+              {saved.updatedAt ? ` • Updated: ${new Date(saved.updatedAt).toLocaleString()}` : ""}
             </div>
           </div>
         </div>
       )}
-
-      {err && <p className="mt-2 text-sm text-red-600">{err}</p>}
     </div>
   );
 }
