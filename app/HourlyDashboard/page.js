@@ -75,22 +75,19 @@ export default async function HourlyDashboard() {
   const safeProduction = serializePlain(production);
   const safeUsers = serializePlain(users);
 
-  return (
-    <>
-      <HourlyDashboardComponent
-        hourlyData={safeHourly}
-        allHourlyData={safeHourly}
-        productionData={safeProduction}
-        registerData={safeRegister}
-        users={safeUsers}
-      />
-      <TopThree
-        hourlyData={safeHourly}
-        allHourlyData={safeHourly}
-        productionData={safeProduction}
-        registerData={safeRegister}
-        users={safeUsers}
-      />
-    </>
+  return (<>
+    <HourlyDashboardComponent
+      hourlyData={safeHourly}
+      allHourlyData={safeHourly}
+      productionData={safeProduction}
+      registerData={safeRegister}
+      users={safeUsers}
+    />
+    <TopThree hourlyData={safeHourly}
+      allHourlyData={safeHourly}
+      productionData={safeProduction}
+      registerData={safeRegister}
+      users={safeUsers} />
+      </>
   );
 }
