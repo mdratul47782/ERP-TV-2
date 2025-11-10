@@ -7,10 +7,9 @@ import { userModel } from "@/models/user-model";
 import InspectionTopInput from "../../components/InspectionTopInput";
 import DefectEntryForm from "../../components/DefectEntryForm";
 
-// If you want fresh data in dev:
-export const revalidate = 0;
+export const revalidate = 0; // Always fresh in dev
 
-// helper: make data safe for Client Components
+// ✅ Helper: convert docs to plain JSON-serializable objects
 function serializeHourly(docs) {
   return docs.map((doc) => ({
     ...doc,
@@ -32,7 +31,6 @@ function serializeHourly(docs) {
             : null,
         }
       : null,
-    // ensure nested arrays are plain:
     selectedDefects: Array.isArray(doc.selectedDefects)
       ? doc.selectedDefects.map((d) => ({
           name: d.name,
@@ -42,37 +40,49 @@ function serializeHourly(docs) {
   }));
 }
 
-export default async function DailyInProcessedEndLineInspectionReport({ params }) {
-  const { id } = await params; // Next 15; on 14 use: const { id } = params;
+// ✅ Helper for RegisterModel
+function serializeRegister(docs) {
+  return docs.map((doc) => ({
+    _id: doc._id?.toString(),
+    buyer: doc.buyer || "",
+    building: doc.building || "",
+    floor: doc.floor || "",
+    line: doc.line || "",
+    created_by: doc.created_by || "",
+    style: doc.style || "",
+    item: doc.item || "",
+    color: doc.color || "",
+    createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
+    updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
+  }));
+}
 
-  // Cast route id for queries that match ObjectId fields
+export default async function DailyInProcessedEndLineInspectionReport({ params }) {
+  const { id } = await params;
   const registerObjectId = new mongoose.Types.ObjectId(id);
 
-  // Queries (lean -> plain objects, but still contain ObjectId/Date instances)
+  // ---- Queries ----
   const hourlyData = await HourlyInspectionModel.find({
     "lineInfo.registerId": registerObjectId,
   }).lean();
 
   const allHourly = await HourlyInspectionModel.find({}).lean();
-
-  const productionData = await ProductionInputModel.find({ reportId: id }).lean();
-  const registerData = await RegisterModel.find({ _id: registerObjectId }).lean();
+  const productionData = await ProductionInputModel.find({}).lean();
+  const registerData = await RegisterModel.find({}).lean();
   const users = await userModel.find().lean();
 
-  // Optional server logging (Node terminal)
-  console.log("ALL Hourly (endline_hour_entries):", allHourly.length);
+  console.log("Fetched registerData:", registerData.length, "records");
 
-  // ✅ Serialize any non-plain values before passing to Client Components
+  // ---- Serialize for Client Components ----
   const safeAllHourly = serializeHourly(allHourly);
   const safeHourly = serializeHourly(hourlyData);
+  const safeRegister = serializeRegister(registerData);
 
+  // ---- Render ----
   return (
     <div className="text-black">
-      <InspectionTopInput id={id} />
-      {/* Pass only JSON-serializable data */}
+      <InspectionTopInput id={id} registerData={safeRegister} />
       <DefectEntryForm id={id} hourlyData={safeAllHourly} />
-      {/* If you also need the filtered set somewhere: */}
-      {/* <DefectEntryForm id={id} hourlyData={safeHourly} /> */}
     </div>
   );
 }
