@@ -1,12 +1,16 @@
+// ============================================
+// 1. Server Component: app/quality-summary/page.jsx
+// ============================================
 import QualitySummaryComponent from "@/app/components/QualitySummaryComponent";
 import { HourlyInspectionModel } from "@/models/hourly-inspection-model";
 import { ProductionInputModel } from "@/models/production-input-model";
 import { RegisterModel } from "@/models/register-model";
 import { userModel } from "@/models/user-model";
+import MediaLink from "@/models/MediaLink";
 
 export const revalidate = 0;
 
-/* ------------ serializers (same as your HourlyDashboard) ------------ */
+/* ------------ serializers ------------ */
 function serializeHourly(docs) {
   return (docs || []).map((doc) => ({
     ...doc,
@@ -23,6 +27,7 @@ function serializeHourly(docs) {
       : [],
   }));
 }
+
 function serializeRegister(docs) {
   return (docs || []).map((doc) => ({
     _id: doc._id?.toString(),
@@ -38,8 +43,23 @@ function serializeRegister(docs) {
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
   }));
 }
+
 function serializePlain(docs) {
   return JSON.parse(JSON.stringify(docs ?? []));
+}
+
+function serializeMediaLinks(docs) {
+  return (docs || []).map((doc) => ({
+    _id: doc._id?.toString(),
+    user: doc.user ? { 
+      id: doc.user.id ? doc.user.id.toString() : null,
+      user_name: doc.user.user_name || ""
+    } : null,
+    imageSrc: doc.imageSrc || "",
+    videoSrc: doc.videoSrc || "",
+    createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
+    updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
+  }));
 }
 
 /* ------------ server component ------------ */
@@ -48,11 +68,13 @@ export default async function QualitySummary() {
   const production = await ProductionInputModel.find({}).lean();
   const registers = await RegisterModel.find({}).lean();
   const users = await userModel.find({}).lean();
+  const mediaLinks = await MediaLink.find({}).lean();
 
   const safeHourly = serializeHourly(hourly);
   const safeRegister = serializeRegister(registers);
   const safeProduction = serializePlain(production);
   const safeUsers = serializePlain(users);
+  const safeMediaLinks = serializeMediaLinks(mediaLinks);
 
   return (
     <QualitySummaryComponent
@@ -61,6 +83,8 @@ export default async function QualitySummary() {
       productionData={safeProduction}
       registerData={safeRegister}
       users={safeUsers}
+      mediaLinks={safeMediaLinks}
     />
   );
 }
+

@@ -3,22 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
-import MediaAndKpisTemplate from "./MediaAndKpisTemplate"; // <-- your JS template component
+import MediaAndKpisTemplate from "./MediaAndKpisTemplate";
 
 export default function QualitySummaryComponent({
   hourlyData,
   productionData,
   registerData,
   users,
+  mediaLinks,
 }) {
   const { auth } = useAuth();
   const router = useRouter();
 
-  // show when props last changed
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  
   useEffect(() => {
     setLastUpdate(new Date());
-  }, [hourlyData, productionData, registerData, users]);
+  }, [hourlyData, productionData, registerData, users, mediaLinks]);
 
   // 🔄 auto-refresh server data every 5s
   useEffect(() => {
@@ -33,6 +34,16 @@ export default function QualitySummaryComponent({
       </div>
     );
   }
+
+  // Find user's media links
+  const userMediaLink = useMemo(() => {
+    return (Array.isArray(mediaLinks) ? mediaLinks : []).find(
+      (link) => link?.user?.user_name === auth.user_name
+    );
+  }, [mediaLinks, auth.user_name]);
+
+  const imageSrc = userMediaLink?.imageSrc || "";
+  const videoSrc = userMediaLink?.videoSrc || "";
 
   // helpers
   const isToday = (dateStr) => {
@@ -83,7 +94,7 @@ export default function QualitySummaryComponent({
   const rejectPct = pct(totalDefectivePcs, totalInspected);
   const overallDHUPct = pct(totalDefects, totalInspected);
 
-  // ✅ Top 3 defects across today’s hours for this user
+  // ✅ Top 3 defects across today's hours for this user
   const top3Defects = useMemo(() => {
     const counts = new Map();
     for (const h of todayUserHourly) {
@@ -98,10 +109,6 @@ export default function QualitySummaryComponent({
       .map(([name, qty]) => `${name} (${qty})`);
   }, [todayUserHourly]);
 
-  // (Optional) attempt to find media from registerData if you store it there
-  // const imageSrc = registerData?.[0]?.imageUrl || undefined;
-  // const videoSrc = registerData?.[0]?.videoUrl || undefined;
-
   return (
     <div className="p-3">
       <div className="mb-2 text-[10px] text-gray-500">
@@ -109,8 +116,8 @@ export default function QualitySummaryComponent({
       </div>
 
       <MediaAndKpisTemplate
-        imageSrc={undefined}           // put your URL here if available
-        videoSrc={undefined}           // put your URL here if available
+        imageSrc={imageSrc}
+        videoSrc={videoSrc}
         defects={top3Defects.length ? top3Defects : ["—", "—", "—"]}
         passingRatePct={passingRatePct}
         rejectPct={rejectPct}

@@ -1,11 +1,10 @@
-// app/components/MediaAndKpisTemplate.jsx
 "use client";
 import React from "react";
 
 const Placeholder = ({ title }) => (
   <div className="flex h-full w-full flex-col items-center justify-center text-xs text-gray-300">
     <div className="mb-2 text-sm font-semibold">No {title.toLowerCase()}</div>
-    <div className="opacity-70">Pass a {title.toLowerCase()}Src prop</div>
+    <div className="opacity-70">Add {title.toLowerCase()} in Media Links Editor</div>
   </div>
 );
 
@@ -56,15 +55,22 @@ export default function MediaAndKpisTemplate({
           <MediaTile title="Image">
             {imageSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageSrc} alt="Image" className="h-full w-full object-contain" />
+              <img src={imageSrc} alt="Quality Image" className="h-full w-full object-contain" />
             ) : (
               <Placeholder title="Image" />
             )}
           </MediaTile>
           <MediaTile title="Video">
             {videoSrc ? (
-              <video className="h-full w-full" controls>
-                <source src={videoSrc} />
+              <video 
+                className="h-full w-full" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+              >
+                <source src={videoSrc} type="video/mp4" />
+                <source src={videoSrc} type="video/webm" />
                 Your browser does not support the video tag.
               </video>
             ) : (
