@@ -110,8 +110,8 @@ export default function QualitySummaryComponent({
   }, [todayUserHourly]);
 
   return (
-    <div className="p-3">
-      <div className="mb-2 text-[10px] text-gray-500">
+    <div className="p-3 bg-black h-screen">
+      <div className="mb-2 text-[18px] text-gray-500">
         Last update: {lastUpdate.toLocaleTimeString()}
       </div>
 

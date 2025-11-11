@@ -133,7 +133,6 @@ function VideoPlayer({ sources, iframeFallback }) {
       playsInline
       controls
       onEnded={(e) => {
-        // Ensure continuous play even if some agents ignore loop
         const v = e.currentTarget;
         try {
           v.currentTime = 0;
@@ -141,17 +140,14 @@ function VideoPlayer({ sources, iframeFallback }) {
         } catch {}
       }}
       onLoadedMetadata={(e) => {
-        // iOS sometimes needs a nudge after metadata loads
         try {
           e.currentTarget.play();
         } catch {}
       }}
       onError={() => {
         if (idx < sources.length - 1) {
-          // Try next Drive URL flavor
           setIdx(idx + 1);
         } else if (iframeFallback) {
-          // Final fallback to Drive preview iframe
           setUseIframe(true);
         }
       }}
@@ -159,6 +155,72 @@ function VideoPlayer({ sources, iframeFallback }) {
       <source src={src} />
       Your browser does not support the video tag.
     </video>
+  );
+}
+
+/* ---------------- PIE CHART (pure SVG, no libs) ---------------- */
+function DefectsPie({
+  defects,               // strings OR {name/label, value/count}
+  size = 160,
+  thickness = 22,
+}) {
+  const norm = (Array.isArray(defects) ? defects : []).slice(0, 3).map((d, i) => {
+    if (typeof d === "string") return { label: d, value: 1 };
+    const label = d?.label ?? d?.name ?? `Defect ${i + 1}`;
+    const value = Number(d?.value ?? d?.count ?? 1) || 1;
+    return { label, value };
+  });
+
+  const total = norm.reduce((a, b) => a + b.value, 0) || 1; // avoid /0
+  const COLORS = ["#F87171", "#FB923C", "#F59E0B"]; // red → orange → amber
+
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+
+  let acc = 0;
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
+          <circle r={r} fill="none" stroke="rgba(255,255,255,.18)" strokeWidth={thickness} />
+          {norm.map((s, i) => {
+            const frac = s.value / total;
+            const dasharray = `${c * frac} ${c}`;
+            const dashoffset = c * (1 - acc);
+            acc += frac;
+            return (
+              <circle
+                key={i}
+                r={r}
+                fill="none"
+                stroke={COLORS[i % COLORS.length]}
+                strokeWidth={thickness}
+                strokeLinecap="butt"
+                strokeDasharray={dasharray}
+                strokeDashoffset={dashoffset}
+              />
+            );
+          })}
+        </g>
+      </svg>
+
+      <div className="mt-2 w-full grid grid-cols-3 gap-2 text-[11px]">
+        {norm.map((s, i) => {
+          const pct = Math.round((s.value / total) * 100);
+          return (
+            <div key={i} className="flex items-center gap-2 min-w-0">
+              <span
+                className="h-3 w-3 rounded-sm shrink-0"
+                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+              />
+              <span className="truncate">{s.label}</span>
+              <span className="ml-auto text-white/70">{pct}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -183,7 +245,6 @@ export default function MediaAndKpisTemplate({
       const fileId = extractGoogleDriveId(imageSrc);
       if (!fileId) return "";
 
-      // Try different formats on error
       if (imgAttempt === 0) {
         return `https://drive.google.com/uc?export=download&id=${fileId}`;
       } else if (imgAttempt === 1) {
@@ -204,9 +265,9 @@ export default function MediaAndKpisTemplate({
   const list = (defects && defects.length ? defects : ["—", "—", "—"]).slice(0, 3);
 
   return (
-    <div className={`w-full max-w-5xl mx-auto grid grid-cols-1 gap-3 p-3 text-white md:grid-cols-3 ${className || ""}`}>
+    <div className={`w-full max-w-7xl bg-black mx-auto grid grid-cols-1 gap-3 p-3 text-white md:grid-cols-3 ${className || ""}`}>
       {/* LEFT: Media */}
-      <div className="md:col-span-2 rounded-xl border border-emerald-500 p-2 bg-black">
+      <div className="md:col-span-2 rounded-1xl border  p-0 bg-black">
         <div className="grid grid-cols-2 gap-2">
           {/* IMAGE */}
           <MediaTile title="Image">
@@ -217,7 +278,6 @@ export default function MediaAndKpisTemplate({
                 className="h-full w-full object-contain"
                 onError={() => {
                   console.error("Image failed to load (attempt " + imgAttempt + "):", finalImageSrc);
-                  // Try next format
                   if (imgAttempt < 2) {
                     setImgAttempt(imgAttempt + 1);
                     setImgError(false);
@@ -272,17 +332,38 @@ export default function MediaAndKpisTemplate({
       {/* RIGHT: KPIs */}
       <div className="flex flex-col gap-3">
         <div className="rounded-lg border border-red-400 bg-red-600 p-3 text-white">
-          <div className="text-xs font-bold uppercase tracking-wide">Top 3 Defects</div>
-          <ol className="mt-2 space-y-1 text-sm font-semibold">
-            {list.map((d, i) => (
-              <li key={i} className="flex items-center gap-2">
-                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white/20 text-[11px] font-bold">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="truncate">{d}</span>
-              </li>
-            ))}
-          </ol>
+          <div className="flex items-center justify-between">
+            <div className="text-xl font-bold uppercase tracking-wide">Top 3 Defects</div>
+            <div className="text-[10px] opacity-80">{new Date().toLocaleTimeString()}</div>
+          </div>
+
+          {/* List + Pie side by side on md+; stacked on mobile */}
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ol className="space-y-1 text-sm font-semibold">
+              {list.map((d, i) => {
+                const label = typeof d === "string" ? d : d?.label ?? d?.name ?? `Defect ${i + 1}`;
+                const count =
+                  typeof d === "object" && (d?.value != null || d?.count != null)
+                    ? (d.value ?? d.count)
+                    : null;
+                return (
+                  <li key={i} className="flex items-center gap-2 rounded-md bg-white/10 px-2 py-1">
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white/20 text-[11px] font-bold">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="truncate">{label}</span>
+                    {count != null ? (
+                      <span className="ml-auto text-white/80 text-xs">{count}</span>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className="flex items-center justify-center">
+              <DefectsPie defects={list} size={180} thickness={26} />
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
