@@ -122,7 +122,7 @@ export default function LineInfo() {
   const floors = ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor"];
   const lines = [
     "Line 1", "Line 2", "Line 3", "Line 4", "Line 5",
-    "Line 6", "Line 7", "Line 8", "Line 9", "Line 10",
+    "Line 6", "Line 7", "Line 8", "Line 9", "Line 10","Line 11","Line 12","Line 13","Line 14","Line 15",
   ];
   const styles = ["Style A", "Style B", "Style C", "Style D", "Style E"];
   const items = ["Item X", "Item Y", "Item Z", "Item W", "Item V"];
@@ -215,7 +215,7 @@ export default function LineInfo() {
 
         {/* Style */}
         <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Style:
+          Style Number:
         </label>
         <SearchableDropdown
           options={styles}
@@ -226,7 +226,7 @@ export default function LineInfo() {
 
         {/* Item */}
         <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Item:
+          Style/Item-Description:
         </label>
         <SearchableDropdown
           options={items}
@@ -237,7 +237,7 @@ export default function LineInfo() {
 
         {/* Color */}
         <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Color:
+          Color/Model
         </label>
         <SearchableDropdown
           options={colors}

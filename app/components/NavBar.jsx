@@ -36,7 +36,7 @@ export default function NavBar() {
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-md bg-emerald-500/20 ring-1 ring-emerald-500/40" />
             <span className="hidden md:inline text-white font-extrabold tracking-tight">
-              Production Dashboard
+              HKD 
             </span>
           </div>
 
