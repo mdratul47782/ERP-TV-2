@@ -1,41 +1,24 @@
 @import "tailwindcss";
 
-/* Theme tokens */
+/* Light theme tokens */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-
-  /* ✅ Map your Google Fonts to CSS variables */
-  --font-sans: "Roboto Condensed", Arial, Helvetica, sans-serif;
-  --font-headline: "Stack Sans Headline", "Roboto Condensed", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #ffffff;
-  }
+/* Dark theme tokens (activated when html has .dark) */
+html.dark {
+  --background: #0b1220;   /* deep slate */
+  --foreground: #f5f6f8;   /* near white */
 }
 
-/* ✅ Global default font */
+/* Keep your font choice here if needed */
 html, body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: "Roboto Condensed", Arial, Helvetica, sans-serif;
 }
 
-/* ✅ Use headline font for big titles */
-h1, h2, h3 {
-  font-family: var(--font-headline);
-  letter-spacing: 0.01em;
-}
-
-/* Optional utility class if you want to force headline anywhere */
-.font-headline {
-  font-family: var(--font-headline);
-}
-
-/* Optional utility for monospace (if you need it later) */
-code, pre, kbd, samp {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-}
+/* Optional: heading font from your earlier step */
+h1, h2, h3 { font-family: "Stack Sans Headline", "Roboto Condensed", Arial, sans-serif; }
+code, pre, kbd, samp { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }

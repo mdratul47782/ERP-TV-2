@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
+import ThemeToggle from "./ThemeToggle";
 
 export default function NavBar() {
   const pathname = usePathname() || "/";
@@ -28,19 +29,22 @@ export default function NavBar() {
   const itemClass = (active) =>
     `px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition
      focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
-     ${active ? "bg-emerald-600 text-white shadow-sm"
-              : "text-gray-300 hover:text-white hover:bg-white/10"}`;
+     ${
+       active
+         ? "bg-emerald-600 text-white shadow-sm"
+         : "text-slate-700 hover:text-slate-900 hover:bg-black/5 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10"
+     }`;
 
   return (
     <nav
-      className="sticky top-0 z-50 border-b border-white/10
-                 bg-black/70 backdrop-blur supports-[backdrop-filter]:bg-black/60
-                 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]"
+      className="sticky top-0 z-50 border-b
+                 border-slate-200/60 bg-white/70 backdrop-blur
+                 dark:border-white/10 dark:bg-black/70
+                 shadow-[inset_0_-1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]"
       role="navigation"
       aria-label="Primary"
     >
       <div className="mx-auto max-w-7xl px-3 md:px-4">
-        {/* min-h to allow wrapping; remove fixed h-14 */}
         <div className="flex min-h-14 items-center justify-between gap-3 flex-wrap py-1">
           {/* Brand */}
           <Link
@@ -54,15 +58,15 @@ export default function NavBar() {
               alt="HKD Logo"
               width={28}
               height={28}
-              className="rounded-md ring-1 ring-white/10"
+              className="rounded-md ring-1 ring-black/10 dark:ring-white/10"
               priority
             />
-            <span className="text-white font-extrabold tracking-tight text-base md:text-lg">
+            <span className="font-extrabold tracking-tight text-base md:text-lg text-slate-900 dark:text-white">
               HKD
             </span>
           </Link>
 
-          {/* Center links — wrap instead of scroll; no scrollbar */}
+          {/* Center links — wrap instead of scroll */}
           <ul className="flex flex-wrap items-center gap-1 md:gap-2">
             <li>
               <Link
@@ -128,12 +132,16 @@ export default function NavBar() {
             </li>
           </ul>
 
-          {/* User chip */}
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-xs text-gray-400">User</span>
-            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white">
-              {auth?.user_name ?? "Guest"}
-            </span>
+          {/* Right side: theme toggle + user chip */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-xs text-slate-600 dark:text-gray-400">User</span>
+              <span className="rounded-md border border-black/10 bg-black/[0.03] px-2 py-1 text-xs text-slate-900
+                               dark:border-white/10 dark:bg-white/5 dark:text-white">
+                {auth?.user_name ?? "Guest"}
+              </span>
+            </div>
           </div>
         </div>
       </div>
