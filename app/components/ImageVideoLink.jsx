@@ -105,7 +105,7 @@ export default function MediaLinksEditor() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto m-auto p-4">
       <div className="rounded-lg bg-slate-900 p-4 shadow-lg border border-slate-700">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
