@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 
+/* -------------------------------- UI bits -------------------------------- */
 const Placeholder = ({ title }) => (
   <div className="flex h-full w-full flex-col items-center justify-center text-xs text-gray-300 text-center px-2">
     <div className="mb-2 text-sm font-semibold">No {title.toLowerCase()}</div>
@@ -44,15 +45,15 @@ function extractGoogleDriveId(url) {
     // Format 1: https://drive.google.com/file/d/FILE_ID/view
     const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (match1) return match1[1];
-    
+
     // Format 2: https://drive.google.com/open?id=FILE_ID
     const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match2) return match2[1];
-    
+
     // Format 3: Already in uc format
     const match3 = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
     if (match3) return match3[1];
-    
+
     return null;
   } catch {
     return null;
@@ -61,12 +62,12 @@ function extractGoogleDriveId(url) {
 
 function isGoogleDriveUrl(url) {
   if (!url) return false;
-  return url.includes('drive.google.com');
+  return url.includes("drive.google.com");
 }
 
 function convertToDirectImageUrl(url) {
   if (!url) return "";
-  
+
   if (isGoogleDriveUrl(url)) {
     const fileId = extractGoogleDriveId(url);
     if (fileId) {
@@ -74,28 +75,94 @@ function convertToDirectImageUrl(url) {
       return `https://drive.google.com/uc?export=download&id=${fileId}`;
     }
   }
-  
+
   return url;
 }
 
+// UPDATED: return multiple candidate URLs for video so we can retry and ensure autoplay/loop
 function convertToDirectVideoUrl(url) {
-  if (!url) return "";
-  
+  if (!url) return { isDrive: false, candidates: [] };
+
   if (isGoogleDriveUrl(url)) {
     const fileId = extractGoogleDriveId(url);
     if (fileId) {
-      // Return both embed URL and file ID for iframe
+      const candidates = [
+        // Try several flavors; tenant/CDN policies vary
+        `https://drive.google.com/uc?export=download&id=${fileId}`,
+        `https://drive.google.com/uc?export=preview&id=${fileId}`,
+        `https://drive.google.com/uc?export=view&id=${fileId}`,
+      ];
       return {
+        isDrive: true,
+        candidates,
+        // Keep preview iframe as a last-ditch fallback
         embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
-        fileId: fileId,
-        isDrive: true
       };
     }
   }
-  
-  return { url, isDrive: false };
+
+  return { isDrive: false, candidates: [url] };
 }
 
+/* ---------------- Small resilient video player ---------------- */
+function VideoPlayer({ sources, iframeFallback }) {
+  const [idx, setIdx] = useState(0);
+  const [useIframe, setUseIframe] = useState(false);
+
+  if (useIframe && iframeFallback) {
+    return (
+      <iframe
+        src={iframeFallback}
+        className="h-full w-full rounded-md"
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+        title="Video Player"
+      />
+    );
+  }
+
+  const src = sources[idx];
+
+  return (
+    <video
+      key={src} // force reload when switching sources
+      className="h-full w-full rounded-md"
+      autoPlay
+      loop
+      muted
+      playsInline
+      controls
+      onEnded={(e) => {
+        // Ensure continuous play even if some agents ignore loop
+        const v = e.currentTarget;
+        try {
+          v.currentTime = 0;
+          v.play();
+        } catch {}
+      }}
+      onLoadedMetadata={(e) => {
+        // iOS sometimes needs a nudge after metadata loads
+        try {
+          e.currentTarget.play();
+        } catch {}
+      }}
+      onError={() => {
+        if (idx < sources.length - 1) {
+          // Try next Drive URL flavor
+          setIdx(idx + 1);
+        } else if (iframeFallback) {
+          // Final fallback to Drive preview iframe
+          setUseIframe(true);
+        }
+      }}
+    >
+      <source src={src} />
+      Your browser does not support the video tag.
+    </video>
+  );
+}
+
+/* ---------------- Main component ---------------- */
 export default function MediaAndKpisTemplate({
   imageSrc,
   videoSrc,
@@ -111,11 +178,11 @@ export default function MediaAndKpisTemplate({
   // Convert image URL with fallback attempts
   const finalImageSrc = useMemo(() => {
     if (!imageSrc) return "";
-    
+
     if (isGoogleDriveUrl(imageSrc)) {
       const fileId = extractGoogleDriveId(imageSrc);
       if (!fileId) return "";
-      
+
       // Try different formats on error
       if (imgAttempt === 0) {
         return `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -125,11 +192,11 @@ export default function MediaAndKpisTemplate({
         return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
       }
     }
-    
+
     return imageSrc;
   }, [imageSrc, imgAttempt]);
 
-  // Convert video URL
+  // Convert video URL (now provides multiple candidates + iframe fallback)
   const videoData = useMemo(() => {
     return convertToDirectVideoUrl(videoSrc);
   }, [videoSrc]);
@@ -165,9 +232,7 @@ export default function MediaAndKpisTemplate({
             ) : finalImageSrc && imgError ? (
               <div className="flex flex-col items-center justify-center text-center px-2">
                 <div className="text-amber-400 text-xs mb-2">⚠️ Image Load Failed</div>
-                <div className="text-[10px] text-gray-400 mb-2">
-                  Checklist:
-                </div>
+                <div className="text-[10px] text-gray-400 mb-2">Checklist:</div>
                 <ul className="text-[10px] text-gray-400 text-left space-y-1">
                   <li>✓ File shared as "Anyone with the link"</li>
                   <li>✓ Permission set to "Viewer"</li>
@@ -176,9 +241,9 @@ export default function MediaAndKpisTemplate({
                 <div className="mt-2 text-[9px] text-gray-500 font-mono break-all">
                   ID: {extractGoogleDriveId(imageSrc)}
                 </div>
-                <a 
-                  href={imageSrc} 
-                  target="_blank" 
+                <a
+                  href={imageSrc}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-[10px] text-blue-400 underline mt-2"
                 >
@@ -192,27 +257,11 @@ export default function MediaAndKpisTemplate({
 
           {/* VIDEO */}
           <MediaTile title="Video">
-            {videoData.isDrive ? (
-              <iframe
-                src={videoData.embedUrl}
-                className="h-full w-full rounded-md"
-                allow="autoplay"
-                allowFullScreen
-                title="Video Player"
+            {videoData?.candidates?.length ? (
+              <VideoPlayer
+                sources={videoData.candidates}
+                iframeFallback={videoData.embedUrl}
               />
-            ) : videoData.url ? (
-              <video 
-                className="h-full w-full" 
-                autoPlay 
-                loop 
-                muted 
-                playsInline
-                controls
-              >
-                <source src={videoData.url} type="video/mp4" />
-                <source src={videoData.url} type="video/webm" />
-                Your browser does not support the video tag.
-              </video>
             ) : (
               <Placeholder title="Video" />
             )}
