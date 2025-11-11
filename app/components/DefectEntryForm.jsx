@@ -104,7 +104,72 @@ function getUserIdFromAuth(auth) {
     null
   );
 }
+// --- Searchable dropdown for defects (no deps) ---
+function SearchableDefectPicker({ options, onSelect, placeholder = "Search defect by name..." }) {
+  const [query, setQuery] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+  const [hi, setHi] = React.useState(0);
 
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options.slice(0, 50);
+    return options.filter((o) => o.toLowerCase().includes(q)).slice(0, 50);
+  }, [query, options]);
+
+  React.useEffect(() => { setHi(0); }, [query, open]);
+
+  const selectValue = (val) => {
+    onSelect(val);      // <-- your existing handler
+    setQuery("");       // clear input
+    setOpen(false);     // close list
+  };
+
+  return (
+    <div className="relative">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)} // allow click
+        onKeyDown={(e) => {
+          if (!open && (e.key === "ArrowDown" || e.key === "Enter")) setOpen(true);
+          if (!filtered.length) return;
+          if (e.key === "ArrowDown") { e.preventDefault(); setHi((i) => Math.min(i + 1, filtered.length - 1)); }
+          if (e.key === "ArrowUp")   { e.preventDefault(); setHi((i) => Math.max(i - 1, 0)); }
+          if (e.key === "Enter")     { e.preventDefault(); selectValue(filtered[hi]); }
+          if (e.key === "Escape")    { setOpen(false); }
+        }}
+        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+        placeholder={placeholder}
+        role="combobox"
+        aria-expanded={open}
+        aria-autocomplete="list"
+      />
+
+      {open && (
+        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow">
+          {filtered.length ? (
+            filtered.map((opt, idx) => (
+              <button
+                type="button"
+                key={opt}
+                onMouseDown={(e) => e.preventDefault()} // keep focus for blur delay
+                onClick={() => selectValue(opt)}
+                className={`block w-full text-left px-2 py-1.5 text-sm ${
+                  idx === hi ? "bg-emerald-50 text-emerald-700" : "hover:bg-gray-50"
+                }`}
+              >
+                {opt}
+              </button>
+            ))
+          ) : (
+            <div className="px-2 py-2 text-sm text-gray-500">No results</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 export default function EndlineDashboard() {
   const { auth } = useAuth();
 
@@ -348,24 +413,18 @@ export default function EndlineDashboard() {
               </div>
 
               <div className="mb-3">
-                <label className="mb-1 block text-xs font-medium text-gray-700">
-                  Add Defect
-                </label>
-                <select
-                  onChange={(e) => {
-                    handleSelectDefect(e.target.value);
-                    e.target.value = "";
-                  }}
-                  className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-                >
-                  <option value="">Select defect</option>
-                  {defectOptions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
+  <label className="mb-1 block text-xs font-medium text-gray-700">
+    Add Defect
+  </label>
+
+  <SearchableDefectPicker
+    options={defectOptions}
+    onSelect={(val) => {
+      handleSelectDefect(val); // unchanged functionality
+    }}
+  />
+</div>
+
 
               {form.selectedDefects.length > 0 && (
                 <div className="mb-3 space-y-1">
