@@ -25,10 +25,11 @@ function KpiTile({ label, value, tone = "neutral" }) {
   );
 }
 
+/* STRETCH TILES: allow tiles to grow to full column height */
 function MediaTile({ title, children }) {
   return (
-    <div className="relative rounded-lg border border-emerald-600 bg-black/60 p-2">
-      <div className="aspect-[4/5] w-full overflow-hidden rounded-md flex items-center justify-center bg-gray-900">
+    <div className="relative h-full rounded-lg border border-emerald-600 bg-black/60 p-2">
+      <div className="w-full h-full overflow-hidden rounded-md flex items-center justify-center bg-gray-900">
         {children}
       </div>
       <div className="absolute -top-2 left-2 rounded-sm bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-900">
@@ -42,18 +43,12 @@ function MediaTile({ title, children }) {
 function extractGoogleDriveId(url) {
   if (!url) return null;
   try {
-    // Format 1: https://drive.google.com/file/d/FILE_ID/view
     const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (match1) return match1[1];
-
-    // Format 2: https://drive.google.com/open?id=FILE_ID
     const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match2) return match2[1];
-
-    // Format 3: Already in uc format
     const match3 = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
     if (match3) return match3[1];
-
     return null;
   } catch {
     return null;
@@ -67,40 +62,27 @@ function isGoogleDriveUrl(url) {
 
 function convertToDirectImageUrl(url) {
   if (!url) return "";
-
   if (isGoogleDriveUrl(url)) {
     const fileId = extractGoogleDriveId(url);
-    if (fileId) {
-      // Use uc?export=download for actual image file
-      return `https://drive.google.com/uc?export=download&id=${fileId}`;
-    }
+    if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
-
   return url;
 }
 
-// UPDATED: return multiple candidate URLs for video so we can retry and ensure autoplay/loop
+// return multiple candidate URLs for video so we can retry and ensure autoplay/loop
 function convertToDirectVideoUrl(url) {
   if (!url) return { isDrive: false, candidates: [] };
-
   if (isGoogleDriveUrl(url)) {
     const fileId = extractGoogleDriveId(url);
     if (fileId) {
       const candidates = [
-        // Try several flavors; tenant/CDN policies vary
         `https://drive.google.com/uc?export=download&id=${fileId}`,
         `https://drive.google.com/uc?export=preview&id=${fileId}`,
         `https://drive.google.com/uc?export=view&id=${fileId}`,
       ];
-      return {
-        isDrive: true,
-        candidates,
-        // Keep preview iframe as a last-ditch fallback
-        embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
-      };
+      return { isDrive: true, candidates, embedUrl: `https://drive.google.com/file/d/${fileId}/preview` };
     }
   }
-
   return { isDrive: false, candidates: [url] };
 }
 
@@ -125,7 +107,7 @@ function VideoPlayer({ sources, iframeFallback }) {
 
   return (
     <video
-      key={src} // force reload when switching sources
+      key={src}
       className="h-full w-full rounded-md"
       autoPlay
       loop
@@ -134,22 +116,14 @@ function VideoPlayer({ sources, iframeFallback }) {
       controls
       onEnded={(e) => {
         const v = e.currentTarget;
-        try {
-          v.currentTime = 0;
-          v.play();
-        } catch {}
+        try { v.currentTime = 0; v.play(); } catch {}
       }}
       onLoadedMetadata={(e) => {
-        try {
-          e.currentTarget.play();
-        } catch {}
+        try { e.currentTarget.play(); } catch {}
       }}
       onError={() => {
-        if (idx < sources.length - 1) {
-          setIdx(idx + 1);
-        } else if (iframeFallback) {
-          setUseIframe(true);
-        }
+        if (idx < sources.length - 1) setIdx(idx + 1);
+        else if (iframeFallback) setUseIframe(true);
       }}
     >
       <source src={src} />
@@ -159,11 +133,8 @@ function VideoPlayer({ sources, iframeFallback }) {
 }
 
 /* ---------------- PIE CHART (pure SVG, no libs) ---------------- */
-function DefectsPie({
-  defects,               // strings OR {name/label, value/count}
-  size = 160,
-  thickness = 22,
-}) {
+function DefectsPie({ defects, size = 150, thickness = 20 }) {
+  // REDUCED: pie size & ring thickness a bit to fit uniform height
   const norm = (Array.isArray(defects) ? defects : []).slice(0, 3).map((d, i) => {
     if (typeof d === "string") return { label: d, value: 1 };
     const label = d?.label ?? d?.name ?? `Defect ${i + 1}`;
@@ -171,12 +142,10 @@ function DefectsPie({
     return { label, value };
   });
 
-  const total = norm.reduce((a, b) => a + b.value, 0) || 1; // avoid /0
-  const COLORS = ["#F87171", "#FB923C", "#F59E0B"]; // red → orange → amber
-
+  const total = norm.reduce((a, b) => a + b.value, 0) || 1;
+  const COLORS = ["#F87171", "#FB923C", "#F59E0B"];
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
-
   let acc = 0;
 
   return (
@@ -210,10 +179,7 @@ function DefectsPie({
           const pct = Math.round((s.value / total) * 100);
           return (
             <div key={i} className="flex items-center gap-2 min-w-0">
-              <span
-                className="h-3 w-3 rounded-sm shrink-0"
-                style={{ backgroundColor: COLORS[i % COLORS.length] }}
-              />
+              <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
               <span className="truncate">{s.label}</span>
               <span className="ml-auto text-white/70">{pct}%</span>
             </div>
@@ -237,38 +203,32 @@ export default function MediaAndKpisTemplate({
   const [imgError, setImgError] = useState(false);
   const [imgAttempt, setImgAttempt] = useState(0);
 
-  // Convert image URL with fallback attempts
   const finalImageSrc = useMemo(() => {
     if (!imageSrc) return "";
-
     if (isGoogleDriveUrl(imageSrc)) {
       const fileId = extractGoogleDriveId(imageSrc);
       if (!fileId) return "";
-
-      if (imgAttempt === 0) {
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
-      } else if (imgAttempt === 1) {
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
-      } else if (imgAttempt === 2) {
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
-      }
+      if (imgAttempt === 0) return `https://drive.google.com/uc?export=download&id=${fileId}`;
+      if (imgAttempt === 1) return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      if (imgAttempt === 2) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
     }
-
     return imageSrc;
   }, [imageSrc, imgAttempt]);
 
-  // Convert video URL (now provides multiple candidates + iframe fallback)
-  const videoData = useMemo(() => {
-    return convertToDirectVideoUrl(videoSrc);
-  }, [videoSrc]);
+  const videoData = useMemo(() => convertToDirectVideoUrl(videoSrc), [videoSrc]);
 
   const list = (defects && defects.length ? defects : ["—", "—", "—"]).slice(0, 3);
 
   return (
-    <div className={`w-full max-w-5/6 bg-black mx-auto grid grid-cols-1 gap-3 p-3 text-white md:grid-cols-3 ${className || ""}`}>
+    <div
+      className={`w-full max-w-[95vw] bg-black mx-auto grid grid-cols-2 md:grid-cols-3 items-stretch gap-2 p-0 text-white
+      /* HEIGHT LOCK: reduce total row height a little so all sections match */
+      md:h-[50vh]
+      ${className || ""}`}
+    >
       {/* LEFT: Media */}
-      <div className="md:col-span-2 rounded-xl border  p-0 bg-black">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="md:col-span-2 rounded-xl border p-0 bg-black h-full">
+        <div className="grid grid-cols-2 gap-2 h-full">
           {/* IMAGE */}
           <MediaTile title="Image">
             {finalImageSrc && !imgError ? (
@@ -277,16 +237,8 @@ export default function MediaAndKpisTemplate({
                 alt="Quality Image"
                 className="h-full w-full object-contain"
                 onError={() => {
-                  console.error("Image failed to load (attempt " + imgAttempt + "):", finalImageSrc);
-                  if (imgAttempt < 2) {
-                    setImgAttempt(imgAttempt + 1);
-                    setImgError(false);
-                  } else {
-                    setImgError(true);
-                  }
-                }}
-                onLoad={() => {
-                  console.log("Image loaded successfully:", finalImageSrc);
+                  if (imgAttempt < 2) { setImgAttempt(imgAttempt + 1); setImgError(false); }
+                  else { setImgError(true); }
                 }}
               />
             ) : finalImageSrc && imgError ? (
@@ -301,12 +253,7 @@ export default function MediaAndKpisTemplate({
                 <div className="mt-2 text-[9px] text-gray-500 font-mono break-all">
                   ID: {extractGoogleDriveId(imageSrc)}
                 </div>
-                <a
-                  href={imageSrc}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-blue-400 underline mt-2"
-                >
+                <a href={imageSrc} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 underline mt-2">
                   Check File in Drive →
                 </a>
               </div>
@@ -318,10 +265,7 @@ export default function MediaAndKpisTemplate({
           {/* VIDEO */}
           <MediaTile title="Video">
             {videoData?.candidates?.length ? (
-              <VideoPlayer
-                sources={videoData.candidates}
-                iframeFallback={videoData.embedUrl}
-              />
+              <VideoPlayer sources={videoData.candidates} iframeFallback={videoData.embedUrl} />
             ) : (
               <Placeholder title="Video" />
             )}
@@ -330,48 +274,46 @@ export default function MediaAndKpisTemplate({
       </div>
 
       {/* RIGHT: KPIs */}
-      <div className="flex flex-col gap-2">
-        <div className="rounded-lg border border-red-400 bg-black-600 p-2 text-white">
+      <div className="flex flex-col gap-2 h-full min-h-0">
+        {/* MATCH HEIGHT: make this card grow to fill column height */}
+        <div className="flex-1 rounded-lg border border-red-400 bg-black p-2 text-white overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="text-xl font-bold uppercase tracking-wide">Top 3 Defects</div>
             <div className="text-[10px] opacity-80">{new Date().toLocaleTimeString()}</div>
           </div>
 
-          {/* List + Pie side by side on md+; stacked on mobile */}
-          <div className="mt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <ol className="space-y-1 text-sm font-semibold">
+          {/* List + Pie */}
+          <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 h-[calc(100%-1.75rem)]">
+            <ol className="space-y-1 text-sm font-semibold overflow-auto pr-1">
               {list.map((d, i) => {
                 const label = typeof d === "string" ? d : d?.label ?? d?.name ?? `Defect ${i + 1}`;
-                const count =
-                  typeof d === "object" && (d?.value != null || d?.count != null)
-                    ? (d.value ?? d.count)
-                    : null;
+                const count = typeof d === "object" && (d?.value != null || d?.count != null) ? (d.value ?? d.count) : null;
                 return (
                   <li key={i} className="flex items-center gap-2 rounded-md bg-white/10 px-2 py-1">
                     <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white/20 text-[11px] font-bold">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span className="truncate">{label}</span>
-                    {count != null ? (
-                      <span className="ml-auto text-white/80 text-xs">{count}</span>
-                    ) : null}
+                    {count != null ? <span className="ml-auto text-white/80 text-xs">{count}</span> : null}
                   </li>
                 );
               })}
             </ol>
 
             <div className="flex items-center justify-center">
-              <DefectsPie defects={list} size={180} thickness={26} />
+              {/* REDUCED: pie size to 150 & ring 20 to keep heights aligned */}
+              <DefectsPie defects={list} size={140} thickness={20} />
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {/* compact KPI rows */}
+        <div className="grid grid-cols-2 gap-2">
           <KpiTile label="Passing Rate" value={`${passingRatePct}%`} tone="blue" />
           <KpiTile label="Reject" value={`${rejectPct}%`} tone="red" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <KpiTile label="Overall DHU%" value={`${overallDHUPct}%`} tone="green" />
           <KpiTile label="Hourly Inspection Report" value="Open" tone="light" />
         </div>

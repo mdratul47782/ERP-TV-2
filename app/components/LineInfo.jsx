@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+import Image from "next/image";
 export default function LineInfo() {
   const { auth } = useAuth();
 
@@ -140,7 +141,14 @@ export default function LineInfo() {
       {/* Header */}
       <div className="flex items-center bg-gradient-to-br from-blue-600 to-blue-700 text-white px-6 py-4 rounded-t-lg">
         <div className="w-12 h-12 bg-white rounded-md mr-3 flex items-center justify-center">
-          <span className="text-2xl">🏭</span>
+          <Image
+                      src="/1630632533544 (2).jpg"
+                      alt="HKD Outdoor Innovations Ltd. Logo"
+                      width={80}
+                      height={80}
+                      className="  "
+                      priority
+                    />
         </div>
         <div>
           <h1 className="text-2xl font-semibold leading-tight">

@@ -8,6 +8,7 @@ import { RegisterModel } from "@/models/register-model";
 import { userModel } from "@/models/user-model";
 import MediaLink from "@/models/MediaLink";
 import InspectionTopInput from "@/app/components/InspectionTopInput";
+
 export const revalidate = 0;
 
 /* ------------ serializers ------------ */
@@ -51,10 +52,12 @@ function serializePlain(docs) {
 function serializeMediaLinks(docs) {
   return (docs || []).map((doc) => ({
     _id: doc._id?.toString(),
-    user: doc.user ? { 
-      id: doc.user.id ? doc.user.id.toString() : null,
-      user_name: doc.user.user_name || ""
-    } : null,
+    user: doc.user
+      ? {
+          id: doc.user.id ? doc.user.id.toString() : null,
+          user_name: doc.user.user_name || "",
+        }
+      : null,
     imageSrc: doc.imageSrc || "",
     videoSrc: doc.videoSrc || "",
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
@@ -63,7 +66,7 @@ function serializeMediaLinks(docs) {
 }
 
 /* ------------ server component ------------ */
-export default async function QualitySummary() {
+export default async function QualitySummary({ searchParams }) {
   const hourly = await HourlyInspectionModel.find({}).lean();
   const production = await ProductionInputModel.find({}).lean();
   const registers = await RegisterModel.find({}).lean();
@@ -76,17 +79,39 @@ export default async function QualitySummary() {
   const safeUsers = serializePlain(users);
   const safeMediaLinks = serializeMediaLinks(mediaLinks);
 
+  // ---- Pick active register (like your other page) ----
+  const urlRegisterId = searchParams?.register || searchParams?.id || null;
+
+  const activeRegister =
+    (urlRegisterId && safeRegister.find((r) => r._id === String(urlRegisterId))) ||
+    // fallback: most recently updated register (or first)
+    safeRegister
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+      )[0];
+
+  const activeRegisterId = activeRegister?._id || null;
+
   return (
     <>
-      <InspectionTopInput className="mb-0 !bg-black !text-white "  />
+      {/* Pass data to InspectionTopInput just like the other page */}
+      <InspectionTopInput
+        id={activeRegisterId}
+        registerData={safeRegister}
+        className="mb-0 !bg-black !text-white"
+      />
+
+      {/* Optional: also pass activeRegisterId to the summary to filter by this line */}
       <QualitySummaryComponent
         hourlyData={safeHourly}
-        allHourlyData={safeHourly}
         productionData={safeProduction}
         registerData={safeRegister}
-      users={safeUsers}
-      mediaLinks={safeMediaLinks}
-    /></>
+        users={safeUsers}
+        mediaLinks={safeMediaLinks}
+        activeRegisterId={activeRegisterId}  // <-- optional but useful
+      />
+    </>
   );
 }
-

@@ -1,70 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 import MediaAndKpisTemplate from "./MediaAndKpisTemplate";
 
 const REFRESH_MS = 5000;
-
-/* ---------------------- UI: Refresh / Last-Update bar ---------------------- */
-function RefreshStatus({ lastUpdate, nextInMs, refreshing, onForce }) {
-  const pct = Math.max(0, Math.min(100, 100 - (nextInMs / REFRESH_MS) * 100));
-  const nextSec = Math.ceil(nextInMs / 1000);
-
-  return (
-    <div className="mb-3">
-      <div className="flex items-center justify-between gap-3">
-        {/* status pill */}
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-3 py-2">
-          {/* dot / spinner */}
-          {refreshing ? (
-            <span className="inline-flex h-3 w-3">
-              <span className="inline-block h-3 w-3 rounded-full border-2 border-emerald-300 border-t-transparent animate-spin" />
-            </span>
-          ) : (
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400" />
-            </span>
-          )}
-
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-wide text-emerald-300">
-              Auto-refresh
-            </div>
-            <div className="text-sm font-semibold text-white">
-              {refreshing ? "Refreshing…" : `Next in ${nextSec}s`}
-            </div>
-          </div>
-        </div>
-
-        {/* last updated + manual refresh */}
-        {/* <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 hidden sm:inline">Last updated</span>
-          <span className="text-sm font-mono text-gray-100 hidden sm:inline">
-            {lastUpdate.toLocaleTimeString()}
-          </span>
-          <button
-            onClick={onForce}
-            className="ml-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500 active:scale-[.98] transition"
-            title="Refresh now"
-          >
-            Refresh
-          </button>
-        </div> */}
-      </div>
-
-      {/* progress bar (time until next refresh) */}
-      {/* <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full bg-emerald-400 transition-[width] duration-150"
-          style={{ width: `${pct}%` }}
-        />
-      </div> */}
-    </div>
-  );
-}
 
 export default function QualitySummaryComponent({
   hourlyData,
@@ -76,60 +17,19 @@ export default function QualitySummaryComponent({
   const { auth } = useAuth();
   const router = useRouter();
 
+  // silently stamp lastUpdate when data changes (not shown in UI)
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [refreshing, setRefreshing] = useState(false);
-  const [nextInMs, setNextInMs] = useState(REFRESH_MS);
-
-  // next scheduled fire time (epoch ms)
-  const nextFireAtRef = useRef(Date.now() + REFRESH_MS);
-  const refreshTimerRef = useRef(null);
-  const countdownTimerRef = useRef(null);
-
-  // when server data changes (from any source), stamp the time
   useEffect(() => {
     setLastUpdate(new Date());
   }, [hourlyData, productionData, registerData, users, mediaLinks]);
 
-  // unified refresh function so UI can show a live state
-  const tickRefresh = useCallback(() => {
-    setRefreshing(true);
-    try {
-      router.refresh();
-      setLastUpdate(new Date());
-    } finally {
-      // short grace period so spinner is visible
-      setTimeout(() => setRefreshing(false), 600);
-      nextFireAtRef.current = Date.now() + REFRESH_MS;
-    }
-  }, [router]);
-
-  // schedule periodic refresh + lightweight countdown
+  // 🔄 silent auto-refresh every 5s (no UI)
   useEffect(() => {
-    // periodic refresh
-    refreshTimerRef.current = setInterval(() => {
-      tickRefresh();
+    const id = setInterval(() => {
+      router.refresh();
     }, REFRESH_MS);
-
-    // live countdown (updates ~10x/sec)
-    countdownTimerRef.current = setInterval(() => {
-      const msLeft = Math.max(0, nextFireAtRef.current - Date.now());
-      setNextInMs(msLeft);
-    }, 100);
-
-    return () => {
-      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
-      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-    };
-  }, [tickRefresh]);
-
-  const onForce = useCallback(() => {
-    // manual refresh + reset the cycle
-    if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
-    tickRefresh();
-    refreshTimerRef.current = setInterval(() => {
-      tickRefresh();
-    }, REFRESH_MS);
-  }, [tickRefresh]);
+    return () => clearInterval(id);
+  }, [router]);
 
   if (!auth) {
     return (
@@ -205,7 +105,7 @@ export default function QualitySummaryComponent({
   const top3Defects = useMemo(() => {
     const counts = new Map();
     for (const h of todayUserHourly) {
-      for (const d of (h?.selectedDefects || [])) {
+      for (const d of h?.selectedDefects || []) {
         const key = d?.name || "Unknown";
         counts.set(key, (counts.get(key) || 0) + Number(d?.quantity ?? 0));
       }
@@ -218,13 +118,7 @@ export default function QualitySummaryComponent({
 
   return (
     <div className="p-3 bg-black h-screen">
-      <RefreshStatus
-        lastUpdate={lastUpdate}
-        nextInMs={nextInMs}
-        refreshing={refreshing}
-        onForce={onForce}
-      />
-
+      {/* No refresh/status UI shown */}
       <MediaAndKpisTemplate
         imageSrc={imageSrc}
         videoSrc={videoSrc}

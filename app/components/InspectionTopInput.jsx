@@ -26,14 +26,14 @@ export default function InspectionTopInput({ className = "",id, registerData = [
   ];
 
   return (
-    <header className={`w-full  z-20  p-4 ${className}`}>
+    <header className={`w-full  z-20  p-1 ${className}`}>
       {/* Title */}
       <div className="mx-auto max-w-screen-2xl px-2 sm:px-4">
         <div className="mt-3 rounded-xl border border-gray-200 bg-indigo-200 backdrop-blur shadow-sm">
           <div className="px-3 py-2 text-center">
-            <h1 className="text-[13px] sm:text-sm md:text-base font-semibold tracking-wide text-gray-900">
+            {/* <h1 className="text-[13px] sm:text-sm md:text-base font-semibold tracking-wide text-gray-900">
               Daily In Processed / End Line Inspection Report
-            </h1>
+            </h1> */}
           </div>
 
           {/* Field strip */}

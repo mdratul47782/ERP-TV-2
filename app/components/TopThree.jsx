@@ -87,7 +87,7 @@ export default function TopThreeDefects({ hourlyData = [] }) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto mt-8">
+    <div className="w-full max-w-4xl mx-auto mt-3">
       {/* Header */}
       <div className="bg-red-700 text-white text-center text-sm font-bold py-1 rounded-t-md flex justify-between items-center px-4">
         <span>TOP THREE (3) DEFECTS - TODAY</span>
