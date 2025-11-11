@@ -102,7 +102,7 @@ export default async function QualitySummary({ searchParams }) {
       <InspectionTopInput
         id={activeRegisterId}
         registerData={safeRegister}
-        className="mb-0 !bg-black !text-white"
+        className=" !bg-black !text-white"
       />
 
       {/* Optional: also pass activeRegisterId to the summary to filter by this line */}
