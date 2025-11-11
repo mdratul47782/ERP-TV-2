@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Drive Link Converter</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 700px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .converter-box {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      color: #555;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s;
+      font-family: 'Courier New', monospace;
+    }
+    
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .result {
+      background: #e8f5e9;
+      border: 2px solid #4caf50;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .result.show {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .result-label {
+      color: #2e7d32;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .result-url {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .copy-btn {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .copy-btn:hover {
+      background: #45a049;
+    }
+    
+    .copy-btn.copied {
+      background: #2e7d32;
+    }
+    
+    .error {
+      background: #ffebee;
+      border: 2px solid #f44336;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      display: none;
+    }
+    
+    .error.show {
+      display: block;
+    }
+    
+    .steps {
+      background: #fff3e0;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    
+    .steps h3 {
+      color: #e65100;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .steps ol {
+      margin-left: 20px;
+      color: #555;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    
+    .example {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 4px;
+    }
+    
+    .example h4 {
+      color: #1565c0;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .example code {
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      display: block;
+      margin: 5px 0;
+      font-size: 12px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔗 Google Drive Link Converter</h1>
+    <p class="subtitle">Convert your Google Drive sharing links to direct embeddable URLs</p>
+    
+    <div class="converter-box">
+      <label for="driveUrl">Paste Your Google Drive Link:</label>
+      <input 
+        type="text" 
+        id="driveUrl" 
+        placeholder="https://drive.google.com/file/d/1ABC123xyz/view?usp=sharing"
+      >
+      
+      <button class="btn" onclick="convertLink()">Convert to Direct URL</button>
+      
+      <div id="error" class="error"></div>
+      
+      <div id="result" class="result">
+        <div class="result-label">✅ Direct URL (Ready to use):</div>
+        <div class="result-url" id="directUrl"></div>
+        <button class="copy-btn" onclick="copyToClipboard()">Copy to Clipboard</button>
+      </div>
+    </div>
+    
+    <div class="steps">
+      <h3>📋 How to Get Google Drive Link:</h3>
+      <ol>
+        <li>Upload your file to Google Drive</li>
+        <li>Right-click the file → "Share"</li>
+        <li>Change to "Anyone with the link"</li>
+        <li>Copy the link and paste above</li>
+      </ol>
+    </div>
+    
+    <div class="example">
+      <h4>Example Conversion:</h4>
+      <code><strong>Before:</strong> https://drive.google.com/file/d/1ABC123xyz/view?usp=sharing</code>
+      <code><strong>After:</strong> https://drive.google.com/uc?export=view&id=1ABC123xyz</code>
+    </div>
+  </div>
+
+  <script>
+    function extractFileId(url) {
+      // Pattern 1: /file/d/FILE_ID/
+      const pattern1 = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+      const match1 = url.match(pattern1);
+      if (match1) return match1[1];
+      
+      // Pattern 2: id=FILE_ID
+      const pattern2 = /[?&]id=([a-zA-Z0-9_-]+)/;
+      const match2 = url.match(pattern2);
+      if (match2) return match2[1];
+      
+      return null;
+    }
+    
+    function convertLink() {
+      const input = document.getElementById('driveUrl').value.trim();
+      const errorDiv = document.getElementById('error');
+      const resultDiv = document.getElementById('result');
+      
+      errorDiv.classList.remove('show');
+      resultDiv.classList.remove('show');
+      
+      if (!input) {
+        errorDiv.textContent = '⚠️ Please paste a Google Drive link';
+        errorDiv.classList.add('show');
+        return;
+      }
+      
+      if (!input.includes('drive.google.com')) {
+        errorDiv.textContent = '⚠️ This doesn\'t look like a Google Drive link';
+        errorDiv.classList.add('show');
+        return;
+      }
+      
+      const fileId = extractFileId(input);
+      
+      if (!fileId) {
+        errorDiv.textContent = '⚠️ Could not extract File ID from the link. Make sure it\'s a valid Google Drive sharing link.';
+        errorDiv.classList.add('show');
+        return;
+      }
+      
+      const directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+      document.getElementById('directUrl').textContent = directUrl;
+      resultDiv.classList.add('show');
+    }
+    
+    function copyToClipboard() {
+      const url = document.getElementById('directUrl').textContent;
+      const btn = document.querySelector('.copy-btn');
+      
+      navigator.clipboard.writeText(url).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.classList.add('copied');
+        
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        alert('Failed to copy. Please copy manually.');
+      });
+    }
+    
+    // Allow Enter key to convert
+    document.getElementById('driveUrl').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        convertLink();
+      }
+    });
+  </script>
+</body>
+</html>
