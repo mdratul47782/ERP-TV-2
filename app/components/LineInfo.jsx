@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import Image from "next/image";
+
 export default function LineInfo() {
   const { auth } = useAuth();
 
@@ -26,12 +27,12 @@ export default function LineInfo() {
 
   const fetchUserRecord = async () => {
     if (!auth) return;
-    
+
     setLoading(true);
     try {
       const res = await fetch(`/api/register?created_by=${auth.user_name}`);
       const result = await res.json();
-      
+
       if (result.success && result.data.length > 0) {
         // Load the first (and only) record
         const record = result.data[0];
@@ -59,8 +60,15 @@ export default function LineInfo() {
     }
 
     // Validate all fields
-    if (!formValues.buyer || !formValues.building || !formValues.floor || 
-        !formValues.line || !formValues.style || !formValues.item || !formValues.color) {
+    if (
+      !formValues.buyer ||
+      !formValues.building ||
+      !formValues.floor ||
+      !formValues.line ||
+      !formValues.style ||
+      !formValues.item ||
+      !formValues.color
+    ) {
       alert("Please fill in all fields");
       return;
     }
@@ -81,7 +89,7 @@ export default function LineInfo() {
 
     const result = await res.json();
     alert(result.message || "Saved!");
-    
+
     if (result.success) {
       fetchUserRecord();
     }
@@ -89,16 +97,19 @@ export default function LineInfo() {
 
   const handleDelete = async () => {
     if (!existingRecord) return;
-    
+
     if (!confirm("Are you sure you want to delete this record?")) return;
 
-    const res = await fetch(`/api/register?id=${existingRecord._id}&created_by=${auth.user_name}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(
+      `/api/register?id=${existingRecord._id}&created_by=${auth.user_name}`,
+      {
+        method: "DELETE",
+      }
+    );
 
     const result = await res.json();
     alert(result.message);
-    
+
     if (result.success) {
       setExistingRecord(null);
       setFormValues({
@@ -113,20 +124,42 @@ export default function LineInfo() {
     }
   };
 
-  // Dummy dropdown data
+  // ✅ Updated dropdown data
   const buyers = [
-    "Buyer A", "Buyer B", "Buyer C", "Buyer D", "Buyer E",
-    "Buyer F", "Buyer G", "Buyer H", "Buyer I", "Buyer J",
+    "Decathlon - knit",
+    "Decathlon - woven",
+    "walmart",
+    "Columbia",
+    "ZXY",
+    "CTC",
+    "DIESEL",
+    "Sports Group Denmark",
+    "Identity",
+    "Fifth Avenur",
   ];
+
   const buildings = ["Building A", "Building B", "Building C", "Building D", "Building E"];
-  const floors = ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor"];
+
+  // ✅ Updated floor options
+  const floors = ["A-2", "B-2", "A-3", "B-3", "A-4", "B-4", "A-5", "B-5"];
+
   const lines = [
-    "Line 1", "Line 2", "Line 3", "Line 4", "Line 5",
-    "Line 6", "Line 7", "Line 8", "Line 9", "Line 10","Line 11","Line 12","Line 13","Line 14","Line 15",
+    "Line 1",
+    "Line 2",
+    "Line 3",
+    "Line 4",
+    "Line 5",
+    "Line 6",
+    "Line 7",
+    "Line 8",
+    "Line 9",
+    "Line 10",
+    "Line 11",
+    "Line 12",
+    "Line 13",
+    "Line 14",
+    "Line 15",
   ];
-  const styles = ["Style A", "Style B", "Style C", "Style D", "Style E"];
-  const items = ["Item X", "Item Y", "Item Z", "Item W", "Item V"];
-  const colors = ["Red", "Blue", "Green", "Yellow", "Black", "White", "Gray", "Navy"];
 
   if (loading) {
     return (
@@ -142,18 +175,16 @@ export default function LineInfo() {
       <div className="flex items-center bg-gradient-to-br from-blue-600 to-blue-700 text-white px-6 py-4 rounded-t-lg">
         <div className="w-12 h-12 bg-white rounded-md mr-3 flex items-center justify-center">
           <Image
-                      src="/1630632533544 (2).jpg"
-                      alt="HKD Outdoor Innovations Ltd. Logo"
-                      width={80}
-                      height={80}
-                      className="  "
-                      priority
-                    />
+            src="/1630632533544 (2).jpg"
+            alt="HKD Outdoor Innovations Ltd. Logo"
+            width={80}
+            height={80}
+            className=""
+            priority
+          />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold leading-tight">
-            HKD Outdoor Innovations Ltd.
-          </h1>
+          <h1 className="text-2xl font-semibold leading-tight">HKD Outdoor Innovations Ltd.</h1>
           <p className="text-lg opacity-90">Line Information Registration</p>
         </div>
       </div>
@@ -170,9 +201,7 @@ export default function LineInfo() {
       {/* Form */}
       <div className="grid grid-cols-[150px_1fr] gap-x-4 gap-y-5 px-8 py-8">
         {/* Buyer */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Buyer:
-        </label>
+        <label className="text-gray-700 font-medium text-sm pt-2">Register Buyer:</label>
         <SearchableDropdown
           options={buyers}
           placeholder="Select Buyer"
@@ -181,9 +210,7 @@ export default function LineInfo() {
         />
 
         {/* Building */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Building:
-        </label>
+        <label className="text-gray-700 font-medium text-sm pt-2">Register Building:</label>
         <SearchableDropdown
           options={buildings}
           placeholder="Select Building"
@@ -192,9 +219,7 @@ export default function LineInfo() {
         />
 
         {/* Floor */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Floor:
-        </label>
+        <label className="text-gray-700 font-medium text-sm pt-2">Register Floor:</label>
         <SearchableDropdown
           options={floors}
           placeholder="Select Floor"
@@ -203,9 +228,7 @@ export default function LineInfo() {
         />
 
         {/* Line */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Register Line:
-        </label>
+        <label className="text-gray-700 font-medium text-sm pt-2">Register Line:</label>
         <SearchableDropdown
           options={lines}
           placeholder="Select Line"
@@ -213,38 +236,34 @@ export default function LineInfo() {
           onChange={(val) => setFormValues({ ...formValues, line: val })}
         />
 
-        {/* Style */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Style Number:   
-
-        </label>
-        <SearchableDropdown
-          options={styles}
-          placeholder="Select Style"
+        {/* ✅ Style (manual input) */}
+        <label className="text-gray-700 font-medium text-sm pt-2">Style Number:</label>
+        <input
+          type="text"
+          placeholder="Enter Style Number"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={formValues.style}
-          onChange={(val) => setFormValues({ ...formValues, style: val })}
+          onChange={(e) => setFormValues({ ...formValues, style: e.target.value })}
         />
 
-        {/* Item */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Style/Item-Description:
-        </label>
-        <SearchableDropdown
-          options={items}
-          placeholder="Select Item"
+        {/* ✅ Item (manual input) */}
+        <label className="text-gray-700 font-medium text-sm pt-2">Style/Item-Description:</label>
+        <input
+          type="text"
+          placeholder="Enter Style/Item Description"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={formValues.item}
-          onChange={(val) => setFormValues({ ...formValues, item: val })}
+          onChange={(e) => setFormValues({ ...formValues, item: e.target.value })}
         />
 
-        {/* Color */}
-        <label className="text-gray-700 font-medium text-sm pt-2">
-          Color/Model
-        </label>
-        <SearchableDropdown
-          options={colors}
-          placeholder="Select Color"
+        {/* ✅ Color (manual input) */}
+        <label className="text-gray-700 font-medium text-sm pt-2">Color/Model</label>
+        <input
+          type="text"
+          placeholder="Enter Color/Model"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={formValues.color}
-          onChange={(val) => setFormValues({ ...formValues, color: val })}
+          onChange={(e) => setFormValues({ ...formValues, color: e.target.value })}
         />
 
         {/* Buttons */}
@@ -281,15 +300,10 @@ export default function LineInfo() {
       <div className="bg-gray-50 px-6 py-4 text-right text-base text-gray-600 rounded-b-lg border-t">
         {auth ? (
           <>
-            Logged in as:{" "}
-            <span className="font-semibold text-gray-800">
-              {auth.user_name}
-            </span>
+            Logged in as: <span className="font-semibold text-gray-800">{auth.user_name}</span>
           </>
         ) : (
-          <span className="text-red-500 font-medium">
-            You are not logged in
-          </span>
+          <span className="text-red-500 font-medium">You are not logged in</span>
         )}
       </div>
     </div>
@@ -303,9 +317,7 @@ function SearchableDropdown({ options, value, onChange, placeholder }) {
   const ref = useRef(null);
 
   const filtered = query
-    ? options.filter((opt) =>
-        opt.toLowerCase().includes(query.toLowerCase())
-      )
+    ? options.filter((opt) => opt.toLowerCase().includes(query.toLowerCase()))
     : options;
 
   return (

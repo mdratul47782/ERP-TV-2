@@ -67,6 +67,10 @@ function serializeMediaLinks(docs) {
 
 /* ------------ server component ------------ */
 export default async function QualitySummary({ searchParams }) {
+  // ✅ Unwrap the Promise-based searchParams (works even if it's already a plain object)
+  const params = (await searchParams) || {};
+  const urlRegisterId = params?.register || params?.id || null;
+
   const hourly = await HourlyInspectionModel.find({}).lean();
   const production = await ProductionInputModel.find({}).lean();
   const registers = await RegisterModel.find({}).lean();
@@ -80,8 +84,6 @@ export default async function QualitySummary({ searchParams }) {
   const safeMediaLinks = serializeMediaLinks(mediaLinks);
 
   // ---- Pick active register (like your other page) ----
-  const urlRegisterId = searchParams?.register || searchParams?.id || null;
-
   const activeRegister =
     (urlRegisterId && safeRegister.find((r) => r._id === String(urlRegisterId))) ||
     // fallback: most recently updated register (or first)
