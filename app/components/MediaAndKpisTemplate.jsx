@@ -265,9 +265,9 @@ export default function MediaAndKpisTemplate({
   const list = (defects && defects.length ? defects : ["—", "—", "—"]).slice(0, 3);
 
   return (
-    <div className={`w-full max-w-7xl bg-black mx-auto grid grid-cols-1 gap-3 p-3 text-white md:grid-cols-3 ${className || ""}`}>
+    <div className={`w-full max-w-5/6 bg-black mx-auto grid grid-cols-1 gap-3 p-3 text-white md:grid-cols-3 ${className || ""}`}>
       {/* LEFT: Media */}
-      <div className="md:col-span-2 rounded-1xl border  p-0 bg-black">
+      <div className="md:col-span-2 rounded-xl border  p-0 bg-black">
         <div className="grid grid-cols-2 gap-2">
           {/* IMAGE */}
           <MediaTile title="Image">
@@ -330,15 +330,15 @@ export default function MediaAndKpisTemplate({
       </div>
 
       {/* RIGHT: KPIs */}
-      <div className="flex flex-col gap-3">
-        <div className="rounded-lg border border-red-400 bg-red-600 p-3 text-white">
+      <div className="flex flex-col gap-2">
+        <div className="rounded-lg border border-red-400 bg-black-600 p-2 text-white">
           <div className="flex items-center justify-between">
             <div className="text-xl font-bold uppercase tracking-wide">Top 3 Defects</div>
             <div className="text-[10px] opacity-80">{new Date().toLocaleTimeString()}</div>
           </div>
 
           {/* List + Pie side by side on md+; stacked on mobile */}
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="mt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ol className="space-y-1 text-sm font-semibold">
               {list.map((d, i) => {
                 const label = typeof d === "string" ? d : d?.label ?? d?.name ?? `Defect ${i + 1}`;

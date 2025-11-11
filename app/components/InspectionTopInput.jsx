@@ -3,7 +3,7 @@
 import { useAuth } from "../hooks/useAuth";
 import { useMemo } from "react";
 
-export default function InspectionTopInput({ id, registerData = [] }) {
+export default function InspectionTopInput({ className = "",id, registerData = [] }) {
   const { auth } = useAuth();
 
   // pick this user's register row (created_by == auth.user_name)
@@ -26,7 +26,7 @@ export default function InspectionTopInput({ id, registerData = [] }) {
   ];
 
   return (
-    <header className="w-full sticky top-0 z-20">
+    <header className={`w-full  z-20  p-4 ${className}`}>
       {/* Title */}
       <div className="mx-auto max-w-screen-2xl px-2 sm:px-4">
         <div className="mt-3 rounded-xl border border-gray-200 bg-indigo-200 backdrop-blur shadow-sm">

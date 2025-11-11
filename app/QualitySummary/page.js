@@ -7,7 +7,7 @@ import { ProductionInputModel } from "@/models/production-input-model";
 import { RegisterModel } from "@/models/register-model";
 import { userModel } from "@/models/user-model";
 import MediaLink from "@/models/MediaLink";
-
+import InspectionTopInput from "@/app/components/InspectionTopInput";
 export const revalidate = 0;
 
 /* ------------ serializers ------------ */
@@ -77,14 +77,16 @@ export default async function QualitySummary() {
   const safeMediaLinks = serializeMediaLinks(mediaLinks);
 
   return (
-    <QualitySummaryComponent
-      hourlyData={safeHourly}
-      allHourlyData={safeHourly}
-      productionData={safeProduction}
-      registerData={safeRegister}
+    <>
+      <InspectionTopInput className="mb-0 !bg-black !text-white "  />
+      <QualitySummaryComponent
+        hourlyData={safeHourly}
+        allHourlyData={safeHourly}
+        productionData={safeProduction}
+        registerData={safeRegister}
       users={safeUsers}
       mediaLinks={safeMediaLinks}
-    />
+    /></>
   );
 }
 
