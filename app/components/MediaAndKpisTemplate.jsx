@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 
 /* -------------------------------- UI bits -------------------------------- */
 const Placeholder = ({ title }) => (
@@ -132,32 +133,51 @@ function VideoPlayer({ sources, iframeFallback }) {
   );
 }
 
-/* ---------------- PIE CHART (pure SVG, no libs) ---------------- */
-function DefectsPie({ defects, size = 150, thickness = 20 }) {
-  // REDUCED: pie size & ring thickness a bit to fit uniform height
-  const norm = (Array.isArray(defects) ? defects : []).slice(0, 3).map((d, i) => {
-    if (typeof d === "string") return { label: d, value: 1 };
-    const label = d?.label ?? d?.name ?? `Defect ${i + 1}`;
-    const value = Number(d?.value ?? d?.count ?? 1) || 1;
+/* ---------------- Defects normalization ---------------- */
+function normalizeDefects(raw, limit = 3) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, limit).map((d, i) => {
+    // Strings like "Broken Stitch (2)" -> parse trailing (n)
+    if (typeof d === "string") {
+      const m = d.match(/^(.*?)(?:\s*\((\d+)\))?$/);
+      const label = (m && m[1] ? m[1] : d).trim() || `Defect ${i + 1}`;
+      const value = m && m[2] ? Number(m[2]) : 0; // default to 0 if no number
+      return { label, value };
+    }
+    const label = (d && (d.label || d.name)) ? (d.label || d.name).toString() : `Defect ${i + 1}`;
+    let value = Number(d && (d.value != null ? d.value : d.count != null ? d.count : 0));
+    if (!Number.isFinite(value) || value < 0) value = 0;
     return { label, value };
   });
+}
 
-  const total = norm.reduce((a, b) => a + b.value, 0) || 1;
+/* ---------------- PIE CHART (pure SVG, no libs) ---------------- */
+function DefectsPie({ defects, size = 150, thickness = 20 }) {
+  const norm = normalizeDefects(defects, 3);
+  const total = norm.reduce((a, b) => a + b.value, 0);
+
   const COLORS = ["#F87171", "#FB923C", "#F59E0B"];
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
+
+  const EPS = 0.5; // seam trim to avoid overlaps
   let acc = 0;
 
   return (
     <div className="flex flex-col items-center justify-center">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
+          {/* base ring */}
           <circle r={r} fill="none" stroke="rgba(255,255,255,.18)" strokeWidth={thickness} />
-          {norm.map((s, i) => {
+
+          {/* slices */}
+          {total > 0 && norm.map((s, i) => {
             const frac = s.value / total;
-            const dasharray = `${c * frac} ${c}`;
+            const dash = Math.max(0, c * frac - EPS); // one dash per slice
+            const gap  = Math.max(0, c - dash);
             const dashoffset = c * (1 - acc);
             acc += frac;
+
             return (
               <circle
                 key={i}
@@ -166,7 +186,8 @@ function DefectsPie({ defects, size = 150, thickness = 20 }) {
                 stroke={COLORS[i % COLORS.length]}
                 strokeWidth={thickness}
                 strokeLinecap="butt"
-                strokeDasharray={dasharray}
+                // Correct: dash + gap = circumference
+                strokeDasharray={`${dash} ${gap}`}
                 strokeDashoffset={dashoffset}
               />
             );
@@ -174,9 +195,10 @@ function DefectsPie({ defects, size = 150, thickness = 20 }) {
         </g>
       </svg>
 
+      {/* legend */}
       <div className="mt-2 w-full grid grid-cols-3 gap-2 text-[11px]">
-        {norm.map((s, i) => {
-          const pct = Math.round((s.value / total) * 100);
+        {(norm.length ? norm : [{ label: "—", value: 0 }, { label: "—", value: 0 }, { label: "—", value: 0 }]).map((s, i) => {
+          const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
           return (
             <div key={i} className="flex items-center gap-2 min-w-0">
               <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
@@ -212,17 +234,25 @@ export default function MediaAndKpisTemplate({
       if (imgAttempt === 1) return `https://drive.google.com/uc?export=view&id=${fileId}`;
       if (imgAttempt === 2) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
     }
-    return imageSrc;
+    return convertToDirectImageUrl(imageSrc);
   }, [imageSrc, imgAttempt]);
 
   const videoData = useMemo(() => convertToDirectVideoUrl(videoSrc), [videoSrc]);
 
-  const list = (defects && defects.length ? defects : ["—", "—", "—"]).slice(0, 3);
+  // Normalize once for list + pie
+  const normalizedDefects = useMemo(() => normalizeDefects(defects || [], 3), [defects]);
+  const list =
+    normalizedDefects.length > 0
+      ? normalizedDefects
+      : [
+          { label: "—", value: 0 },
+          { label: "—", value: 0 },
+          { label: "—", value: 0 },
+        ];
 
   return (
     <div
       className={`w-full max-w-[95vw] bg-black mx-auto grid grid-cols-2 md:grid-cols-3 items-stretch gap-2 p-0 text-white
-      /* HEIGHT LOCK: reduce total row height a little so all sections match */
       md:h-[50vh]
       ${className || ""}`}
     >
@@ -264,7 +294,7 @@ export default function MediaAndKpisTemplate({
 
           {/* VIDEO */}
           <MediaTile title="Video">
-            {videoData?.candidates?.length ? (
+            {videoData && videoData.candidates && videoData.candidates.length ? (
               <VideoPlayer sources={videoData.candidates} iframeFallback={videoData.embedUrl} />
             ) : (
               <Placeholder title="Video" />
@@ -275,7 +305,6 @@ export default function MediaAndKpisTemplate({
 
       {/* RIGHT: KPIs */}
       <div className="flex flex-col gap-2 h-full min-h-0">
-        {/* MATCH HEIGHT: make this card grow to fill column height */}
         <div className="flex-1 rounded-lg border border-red-400 bg-black p-2 text-white overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="text-xl font-bold uppercase tracking-wide">Top 3 Defects</div>
@@ -285,23 +314,18 @@ export default function MediaAndKpisTemplate({
           {/* List + Pie */}
           <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 h-[calc(100%-1.75rem)]">
             <ol className="space-y-1 text-sm font-semibold overflow-auto pr-1">
-              {list.map((d, i) => {
-                const label = typeof d === "string" ? d : d?.label ?? d?.name ?? `Defect ${i + 1}`;
-                const count = typeof d === "object" && (d?.value != null || d?.count != null) ? (d.value ?? d.count) : null;
-                return (
-                  <li key={i} className="flex items-center gap-2 rounded-md bg-white/10 px-2 py-1">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white/20 text-[11px] font-bold">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="truncate">{label}</span>
-                    {count != null ? <span className="ml-auto text-white/80 text-xs">{count}</span> : null}
-                  </li>
-                );
-              })}
+              {list.map((d, i) => (
+                <li key={i} className="flex items-center gap-2 rounded-md bg-white/10 px-2 py-1">
+                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white/20 text-[11px] font-bold">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="truncate">{d.label}</span>
+                  <span className="ml-auto text-white/80 text-xs">{d.value}</span>
+                </li>
+              ))}
             </ol>
 
             <div className="flex items-center justify-center">
-              {/* REDUCED: pie size to 150 & ring 20 to keep heights aligned */}
               <DefectsPie defects={list} size={140} thickness={20} />
             </div>
           </div>
@@ -315,7 +339,9 @@ export default function MediaAndKpisTemplate({
 
         <div className="grid grid-cols-2 gap-2">
           <KpiTile label="Overall DHU%" value={`${overallDHUPct}%`} tone="green" />
-          <KpiTile label="Hourly Inspection Report" value="Open" tone="light" />
+          <Link href="/HourlyDashboard" className="block">
+            <KpiTile label="Hourly Inspection Report" value="Open" tone="light" />
+          </Link>
         </div>
       </div>
     </div>
