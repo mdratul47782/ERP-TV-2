@@ -42,7 +42,7 @@ export default function InspectionTopInput({
               : "relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
           }
         >
-          <div className="mb-2 flex items-center justify-between gap-2">
+          {/* <div className="mb- flex items-center justify-between gap-2">
             <h3
               className={
                 isLight
@@ -50,7 +50,7 @@ export default function InspectionTopInput({
                   : "text-sm font-bold uppercase tracking-wider text-white/90"
               }
             >
-              Line Information
+              
             </h3>
             <div
               className={
@@ -61,7 +61,7 @@ export default function InspectionTopInput({
             >
               {new Date().toLocaleTimeString()}
             </div>
-          </div>
+          </div> */}
 
           {/* Chips */}
           <div className="py-2">
