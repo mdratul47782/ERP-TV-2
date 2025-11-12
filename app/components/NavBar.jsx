@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
-import ThemeToggle from "./ThemeToggle";
 
 export default function NavBar() {
   const pathname = usePathname() || "/";
-  const { auth } = useAuth();
+  const router = useRouter();
+  const { auth, logout } = useAuth();
 
   const PATHS = {
     home: "/",
@@ -21,11 +21,13 @@ export default function NavBar() {
     summary: "/QualitySummary",
   };
 
+  // ✅ No TypeScript types here
   const isActive = (href) => {
     if (href === "/") return pathname === "/";
     return pathname.toLowerCase().startsWith(href.toLowerCase());
   };
 
+  // ✅ No TypeScript types here
   const itemClass = (active) =>
     `px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition
      focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
@@ -34,6 +36,16 @@ export default function NavBar() {
          ? "bg-emerald-600 text-white shadow-sm"
          : "text-slate-700 hover:text-slate-900 hover:bg-black/5 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10"
      }`;
+
+  const handleLogout = async () => {
+    try {
+      if (typeof logout === "function") {
+        await logout();
+      }
+    } finally {
+      router.push("/login");
+    }
+  };
 
   return (
     <nav
@@ -66,7 +78,7 @@ export default function NavBar() {
             </span>
           </Link>
 
-          {/* Center links — wrap instead of scroll */}
+          {/* Center links */}
           <ul className="flex flex-wrap items-center gap-1 md:gap-2">
             <li>
               <Link
@@ -77,15 +89,31 @@ export default function NavBar() {
                 Home
               </Link>
             </li>
-            <li>
-              <Link
-                href={PATHS.login}
-                className={itemClass(isActive(PATHS.login))}
-                aria-current={isActive(PATHS.login) ? "page" : undefined}
-              >
-                Login
-              </Link>
-            </li>
+
+            {/* Login OR Logout */}
+            {!auth?.id ? (
+              <li>
+                <Link
+                  href={PATHS.login}
+                  className={itemClass(isActive(PATHS.login))}
+                  aria-current={isActive(PATHS.login) ? "page" : undefined}
+                >
+                  Login
+                </Link>
+              </li>
+            ) : (
+              <li>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={itemClass(false)}
+                  aria-label="Logout"
+                >
+                  Logout
+                </button>
+              </li>
+            )}
+
             <li title={auth?.id ? "" : "Login required"}>
               <Link
                 href={PATHS.daily}
@@ -132,9 +160,8 @@ export default function NavBar() {
             </li>
           </ul>
 
-          {/* Right side: theme toggle + user chip */}
+          {/* Right side: user chip */}
           <div className="flex items-center gap-2">
-            {/* <ThemeToggle /> */}
             <div className="hidden md:flex items-center gap-2">
               <span className="text-xs text-slate-600 dark:text-gray-400">User</span>
               <span className="rounded-md border border-black/10 bg-black/[0.03] px-2 py-1 text-xs text-slate-900

@@ -1,8 +1,13 @@
-import { AuthContext } from "../contexts";
+// app/hooks/useAuth.ts (or .js)
+"use client";
+
 import { useContext } from "react";
+import { AuthContext } from "../contexts";
 
 export const useAuth = () => {
-    const {auth, setAuth} = useContext(AuthContext);
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider />");
 
-    return {auth, setAuth};
-}
+  const { auth, setAuth, login, logout, loading } = ctx;
+  return { auth, setAuth, login, logout, loading };
+};
