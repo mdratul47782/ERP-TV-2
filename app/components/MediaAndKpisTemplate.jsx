@@ -48,7 +48,7 @@ function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border ${toneMap.card} bg-gradient-to-br p-3 ring-1 transition-transform duration-200 hover:translate-y-0.5`}
+      className={`group relative overflow-hidden rounded-2xl border ${toneMap.card} bg-gradient-to-br p-2.5 sm:p-3 ring-1 transition-transform duration-200 hover:translate-y-0.5 min-h-[84px]`}
     >
       {/* subtle corner glow */}
       <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(120px_60px_at_0%_0%,rgba(255,255,255,0.12),transparent)]" />
@@ -60,10 +60,10 @@ function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
           {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
           {label}
         </div>
-        <span className="text-xs text-white/70">KPI</span>
+        <span className="text-[10px] sm:text-xs text-white/70">KPI</span>
       </div>
 
-      <div className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white">
+      <div className="mt-2 text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight text-white">
         {value}
       </div>
     </div>
@@ -77,7 +77,7 @@ function MediaTile({ title, icon: Icon, children }) {
         {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
         {title}
       </div>
-      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30">
+      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30 min-h-[180px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[300px]">
         {children}
       </div>
     </div>
@@ -141,7 +141,7 @@ function clamp01(x) {
   return Math.min(1, Math.max(0, x));
 }
 
-// NEW: precise percent formatter (keeps two decimals, no unwanted rounding to integer)
+// precise percent formatter (keeps two decimals)
 function safePctString(n, digits = 2) {
   if (n == null || n === "") return `${(0).toFixed(digits)}%`;
   let raw = typeof n === "string" ? n.trim() : n;
@@ -150,7 +150,6 @@ function safePctString(n, digits = 2) {
   }
   let x = Number(raw);
   if (!Number.isFinite(x)) return `${(0).toFixed(digits)}%`;
-  // auto-detect ratios (e.g., 0.6775 -> 67.75)
   if (x > 0 && x <= 1 && (typeof n !== "string" || !String(n).includes("%"))) {
     x *= 100;
   }
@@ -158,7 +157,7 @@ function safePctString(n, digits = 2) {
   return `${x.toFixed(digits)}%`;
 }
 
-// parse any defect entry (string like "Broken Stitch (2)" or {label, value}) -> {label, value}
+// parse any defect entry
 function parseDefect(d, i) {
   if (typeof d === "string") {
     const m = d.match(/^(.*?)(?:\s*\((\d+)\))?$/);
@@ -183,13 +182,12 @@ function sumAllDefects(raw) {
 function normalizeDefects(raw, limit = 3) {
   if (!Array.isArray(raw)) return [];
   const parsed = raw.map((d, i) => parseDefect(d, i));
-  // sort by count desc, keep stable label association
   parsed.sort((a, b) => b.value - a.value);
   return parsed.slice(0, Math.max(0, limit));
 }
 
 /* ---------------- PIE CHART (pure SVG, with center total) ---------------- */
-function DefectsPie({ defects, size = 160, thickness = 18 }) {
+function DefectsPie({ defects, size = 150, thickness = 16 }) {
   const norm = normalizeDefects(defects, 3);
   const total = norm.reduce((a, b) => a + b.value, 0);
 
@@ -201,7 +199,7 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
   let acc = 0;
 
   return (
-    <div className="relative grid place-items-center">
+    <div className="relative grid place-items-center sm:scale-100 scale-95">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
           {/* base ring */}
@@ -239,7 +237,7 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
       </div>
 
       {/* legend */}
-      <div className="mt-3 w-full grid grid-cols-3 gap-2 text-[11px]">
+      <div className="mt-3 w-full grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
         {(norm.length ? norm : [{ label: "—", value: 0 }, { label: "—", value: 0 }, { label: "—", value: 0 }]).map(
           (s, i) => {
             const pct = total > 0 ? (s.value / total) * 100 : 0;
@@ -313,13 +311,13 @@ export default function MediaAndKpisTemplate({
   imageSrc,
   videoSrc,
   defects,
-  // NEW: prefer rftPct, keep passingRatePct for backwards compatibility
+  // prefer rftPct, keep passingRatePct for backwards compatibility
   rftPct,
   passingRatePct = 100,
   // LEGACY: rejectPct kept only as a fallback when counts are not provided
   rejectPct = 0,
   overallDHUPct = 100,
-  // NEW: counts to compute the true Defect Rate
+  // counts to compute the true Defect Rate
   inspectedUnits, // total units inspected/produced
   defectiveUnits, // number of defective units
   className,
@@ -370,19 +368,21 @@ export default function MediaAndKpisTemplate({
   const effectiveDefectRatePct = computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
 
   return (
-    <div className={`relative mx-auto w/full max-w-7xl p-2 sm:p-4 text-white ${className || ""}`.replace("/full", "/full")}>
+    <div className={`relative mx-auto max-w-7xl p-2 sm:p-3 md:p-4 text-white ${className || ""}`}>
       {/* Ambient gradient background for the whole widget */}
       <div className="pointer-events-none absolute -inset-4 -z-10 bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(16,185,129,0.15),transparent),radial-gradient(900px_400px_at_100%_0%,rgba(56,189,248,0.15),transparent)]" />
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+
+      {/* Responsive grid: 1 col on phones, 2 on small tablets, 3 on large tablets/desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 md:gap-4">
         {/* LEFT: Media */}
-        <section className="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <section className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           {/* IMAGE */}
           <MediaTile title="Image" icon={ImageIcon}>
             {finalImageSrc && !imgError ? (
               <img
                 src={finalImageSrc}
                 alt="Quality Image"
-                className="h-full w-full object-contain"
+                className="h-full w-full object-contain select-none"
                 onError={() => {
                   if (imgAttempt < 2) {
                     setImgAttempt(imgAttempt + 1);
@@ -424,29 +424,29 @@ export default function MediaAndKpisTemplate({
         </section>
 
         {/* RIGHT: KPIs */}
-        <aside className="flex min-h-0 flex-col gap-3">
+        <aside className="flex min-h-0 flex-col gap-2.5 sm:gap-3">
           <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-2">
                 <Gauge className="h-4 w-4 text-emerald-300" />
-                <h3 className="text-sm uppercase tracking-wider text-white/90">Top 3 Defects</h3>
+                <h3 className="text-xs sm:text-sm uppercase tracking-wider text-white/90">Top 3 Defects</h3>
               </div>
               <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">{new Date().toLocaleTimeString()}</div>
             </div>
 
             {/* List + Pie */}
             <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
-              <ol className="space-y-1 overflow-auto pr-1 text-sm font-thin">
+              <ol className="space-y-1 overflow-auto pr-1 text-[13px] sm:text-sm font-thin">
                 {list.map((d, i) => {
                   const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
                   const color = COLORS[i % COLORS.length];
                   return (
                     <li
                       key={i}
-                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
+                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1.5 sm:py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
                     >
                       <span
-                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
+                        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
                         style={{ backgroundColor: color, color: "black" }}
                       >
                         {String(i + 1).padStart(2, "0")}
@@ -463,21 +463,21 @@ export default function MediaAndKpisTemplate({
               </ol>
 
               <div className="grid place-items-center">
-                <DefectsPie defects={list} size={160} thickness={18} />
+                <DefectsPie defects={list} size={150} thickness={16} />
               </div>
             </div>
           </div>
 
           {/* compact KPI rows */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             <KpiTile label="RFT%" value={safePctString(effectiveRftPct, 2)} tone="sky" icon={CheckCircle2} />
             <KpiTile label="Defect Rate" value={safePctString(effectiveDefectRatePct, 2)} tone="red" icon={TriangleAlert} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             <KpiTile label="Overall DHU%" value={safePctString(overallDHUPct, 2)} tone="emerald" icon={TrendingUp} />
             <Link href="/HourlyDashboard" className="block">
-              <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3 ring-1 ring-white/10 transition-transform duration-200 hover:translate-y-0.5">
+              <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3 ring-1 ring-white/10 transition-transform duration-200 hover:translate-y-0.5 min-h-[84px]">
                 <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
                   Open
                 </div>
