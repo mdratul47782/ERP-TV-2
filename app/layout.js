@@ -4,6 +4,14 @@ import { dbConnect } from "@/services/mongo";
 import AuthProvider from "./providers/AuthProvider";
 import NavBar from "./components/NavBar";
 import Script from "next/script";
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["600"],        // Extra Bold
+  display: "swap",
+  variable: "--font-poppins",
+});
 
 export const metadata = {
   title: "Production Info App",
@@ -14,31 +22,11 @@ export default async function RootLayout({ children }) {
   await dbConnect();
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={poppins.variable} suppressHydrationWarning>
       <head>
-        {/* ✅ Set theme before React loads to avoid flicker */}
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`(function () {
-              try {
-                const stored = localStorage.getItem('theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                const isDark = stored ? stored === 'dark' : prefersDark;
-                const root = document.documentElement;
-                if (isDark) root.classList.add('dark');
-                else root.classList.remove('dark');
-              } catch (e) {}
-            })();`}
-        </Script>
-
-        {/* (Optional) Google Fonts you shared */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Stack+Sans+Headline:wght@200..700&display=swap"
-          rel="stylesheet"
-        />
+        <Script id="theme-init" strategy="beforeInteractive">{`(function(){try{const s=localStorage.getItem('theme');const p=window.matchMedia('(prefers-color-scheme: dark)').matches;const isDark=s?s==='dark':p;const r=document.documentElement;if(isDark)r.classList.add('dark');else r.classList.remove('dark')}catch(e){}})();`}</Script>
+        {/* Remove the <link> tags to Google Fonts if using next/font */}
       </head>
-
       <body className="antialiased">
         <AuthProvider>
           <NavBar />

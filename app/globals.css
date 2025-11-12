@@ -11,12 +11,16 @@ html.white {
   --background: #0b1220;   /* deep slate */
   --foreground: #f5f6f8;   /* near white */
 }
-
+.poppins-extrabold {
+  font-family: var(--font-poppins), "Roboto Condensed", Arial, Helvetica, sans-serif;
+  font-weight: 800;
+}
 /* Keep your font choice here if needed */
 html, body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Roboto Condensed", Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), "Roboto Condensed", Arial, Helvetica, sans-serif;
+  font-weight: 600;
 }
 
 /* Optional: heading font from your earlier step */

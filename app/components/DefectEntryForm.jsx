@@ -570,7 +570,7 @@ export default function EndlineDashboard() {
                 </div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
-                <div className="text-xs text-gray-500">Pass Rate</div>
+                <div className="text-xs text-gray-500">RFT%</div>
                 <div className="text-lg font-semibold">{passRate}%</div>
               </div>
             </div>

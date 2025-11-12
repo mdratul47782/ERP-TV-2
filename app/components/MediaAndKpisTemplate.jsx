@@ -43,24 +43,22 @@ function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border ${
-        toneMap.card
-      } bg-gradient-to-br p-3 ring-1 transition-transform duration-200 hover:translate-y-0.5`}
+      className={`group relative overflow-hidden rounded-2xl border ${toneMap.card} bg-gradient-to-br p-3 ring-1 transition-transform duration-200 hover:translate-y-0.5`}
     >
       {/* subtle corner glow */}
       <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(120px_60px_at_0%_0%,rgba(255,255,255,0.12),transparent)]" />
 
       <div className="relative flex items-center justify-between">
-        <div className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${toneMap.badge}`}>
+        <div
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${toneMap.badge}`}
+        >
           {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
           {label}
         </div>
         <span className="text-xs text-white/70">KPI</span>
       </div>
 
-      <div className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white">
-        {value}
-      </div>
+      <div className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white">{value}</div>
     </div>
   );
 }
@@ -72,9 +70,7 @@ function MediaTile({ title, icon: Icon, children }) {
         {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
         {title}
       </div>
-      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30">
-        {children}
-      </div>
+      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30">{children}</div>
     </div>
   );
 }
@@ -120,79 +116,56 @@ function convertToDirectVideoUrl(url) {
         `https://drive.google.com/uc?export=preview&id=${fileId}`,
         `https://drive.google.com/uc?export=view&id=${fileId}`,
       ];
-      return { isDrive: true, candidates, embedUrl: `https://drive.google.com/file/d/${fileId}/preview` };
+      return {
+        isDrive: true,
+        candidates,
+        embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+      };
     }
   }
   return { isDrive: false, candidates: [url] };
 }
 
-/* ---------------- Small resilient video player ---------------- */
-function VideoPlayer({ sources, iframeFallback }) {
-  const [idx, setIdx] = useState(0);
-  const [useIframe, setUseIframe] = useState(false);
-
-  if (useIframe && iframeFallback) {
-    return (
-      <iframe
-        src={iframeFallback}
-        className="h-full w-full rounded-xl border border-white/10"
-        allow="autoplay; encrypted-media"
-        allowFullScreen
-        title="Video Player"
-      />
-    );
-  }
-
-  const src = sources[idx];
-
-  return (
-    <video
-      key={src}
-      className="h-full w-full rounded-xl border border-white/10"
-      autoPlay
-      loop
-      muted
-      playsInline
-      controls
-      onEnded={(e) => {
-        const v = e.currentTarget;
-        try {
-          v.currentTime = 0;
-          v.play();
-        } catch {}
-      }}
-      onLoadedMetadata={(e) => {
-        try {
-          e.currentTarget.play();
-        } catch {}
-      }}
-      onError={() => {
-        if (idx < sources.length - 1) setIdx(idx + 1);
-        else if (iframeFallback) setUseIframe(true);
-      }}
-    >
-      <source src={src} />
-      Your browser does not support the video tag.
-    </video>
-  );
+/* ---------------- Percent + defect helpers ---------------- */
+function clamp01(x) {
+  return Math.min(1, Math.max(0, x));
 }
 
-/* ---------------- Defects normalization ---------------- */
-function normalizeDefects(raw, limit = 3) {
-  if (!Array.isArray(raw)) return [];
-  return raw.slice(0, limit).map((d, i) => {
-    // Strings like "Broken Stitch (2)" -> parse trailing (n)
-    if (typeof d === "string") {
-      const m = d.match(/^(.*?)(?:\s*\((\d+)\))?$/);
-      const label = (m && m[1] ? m[1] : d).trim() || `Defect ${i + 1}`;
-      const value = m && m[2] ? Number(m[2]) : 0; // default to 0 if no number
-      return { label, value };
-    }
-    const label = d && (d.label || d.name) ? (d.label || d.name).toString() : `Defect ${i + 1}`;
-    let value = Number(d && (d.value != null ? d.value : d.count != null ? d.count : 0));
+function safePctString(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return "0.0%";
+  const clamped = Math.min(100, Math.max(0, x));
+  return `${clamped.toFixed(1)}%`; // show one decimal place ("point value")
+}
+
+// parse any defect entry (string like "Broken Stitch (2)" or {label, value}) -> {label, value}
+function parseDefect(d, i) {
+  if (typeof d === "string") {
+    const m = d.match(/^(.*?)(?:\s*\((\d+)\))?$/);
+    const label = (m && m[1] ? m[1] : d).trim() || `Defect ${i + 1}`;
+    let value = m && m[2] ? Number(m[2]) : 0;
     if (!Number.isFinite(value) || value < 0) value = 0;
     return { label, value };
-  });
+  }
+  const label = d && (d.label || d.name) ? (d.label || d.name).toString() : `Defect ${i + 1}`;
+  let value = Number(d && (d.value != null ? d.value : d.count != null ? d.count : 0));
+  if (!Number.isFinite(value) || value < 0) value = 0;
+  return { label, value };
+}
+
+// Sum across ALL provided defects (not just top N)
+function sumAllDefects(raw) {
+  if (!Array.isArray(raw)) return 0;
+  return raw.reduce((acc, d, i) => acc + parseDefect(d, i).value, 0);
+}
+
+/* ---------------- Defects normalization (true Top N) ---------------- */
+function normalizeDefects(raw, limit = 3) {
+  if (!Array.isArray(raw)) return [];
+  const parsed = raw.map((d, i) => parseDefect(d, i));
+  // sort by count desc, keep stable label association
+  parsed.sort((a, b) => b.value - a.value);
+  return parsed.slice(0, Math.max(0, limit));
 }
 
 /* ---------------- PIE CHART (pure SVG, with center total) ---------------- */
@@ -247,13 +220,17 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
 
       {/* legend */}
       <div className="mt-3 w-full grid grid-cols-3 gap-2 text-[11px]">
-        {(norm.length ? norm : [{ label: "—", value: 0 }, { label: "—", value: 0 }, { label: "—", value: 0 }]).map((s, i) => {
-          const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
+        {(norm.length ? norm : [
+          { label: "—", value: 0 },
+          { label: "—", value: 0 },
+          { label: "—", value: 0 },
+        ]).map((s, i) => {
+          const pct = total > 0 ? (s.value / total) * 100 : 0;
           return (
             <div key={i} className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1">
               <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
               <span className="truncate text-white/90">{s.label}</span>
-              <span className="ml-auto text-white/70">{pct}%</span>
+              <span className="ml-auto text-white/70">{pct.toFixed(1)}%</span>
             </div>
           );
         })}
@@ -262,14 +239,71 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
   );
 }
 
+/* ---------------- Small resilient video player ---------------- */
+function VideoPlayer({ sources, iframeFallback }) {
+  const [idx, setIdx] = useState(0);
+  const [useIframe, setUseIframe] = useState(false);
+
+  if (useIframe && iframeFallback) {
+    return (
+      <iframe
+        src={iframeFallback}
+        className="h-full w-full rounded-xl border border-white/10"
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+        title="Video Player"
+      />
+    );
+  }
+
+  const src = sources[idx];
+
+  return (
+    <video
+      key={src}
+      className="h-full w-full rounded-xl border border-white/10"
+      autoPlay
+      loop
+      muted
+      playsInline
+      controls
+      onEnded={(e) => {
+        const v = e.currentTarget;
+        try {
+          v.currentTime = 0;
+          v.play();
+        } catch {}
+      }}
+      onLoadedMetadata={(e) => {
+        try {
+          e.currentTarget.play();
+        } catch {}
+      }}
+      onError={() => {
+        if (idx < sources.length - 1) setIdx(idx + 1);
+        else if (iframeFallback) setUseIframe(true);
+      }}
+    >
+      <source src={src} />
+      Your browser does not support the video tag.
+    </video>
+  );
+}
+
 /* ---------------- Main component ---------------- */
 export default function MediaAndKpisTemplate({
   imageSrc,
   videoSrc,
   defects,
+  // NEW: prefer rftPct, keep passingRatePct for backwards compatibility
+  rftPct,
   passingRatePct = 100,
+  // LEGACY: rejectPct kept only as a fallback when counts are not provided
   rejectPct = 0,
   overallDHUPct = 100,
+  // NEW: counts to compute the true Defect Rate
+  inspectedUnits, // total units inspected/produced
+  defectiveUnits, // number of defective units
   className,
 }) {
   const [imgError, setImgError] = useState(false);
@@ -289,25 +323,42 @@ export default function MediaAndKpisTemplate({
 
   const videoData = useMemo(() => convertToDirectVideoUrl(videoSrc), [videoSrc]);
 
-  // Normalize once for list + pie
+  // Normalize once for list + pie (true Top 3)
   const normalizedDefects = useMemo(() => normalizeDefects(defects || [], 3), [defects]);
-  const list =
-    normalizedDefects.length > 0
-      ? normalizedDefects
-      : [
-          { label: "—", value: 0 },
-          { label: "—", value: 0 },
-          { label: "—", value: 0 },
-        ];
+  const list = normalizedDefects.length > 0 ? normalizedDefects : [
+    { label: "—", value: 0 },
+    { label: "—", value: 0 },
+    { label: "—", value: 0 },
+  ];
+
+  // ---- Calculations ----
+  // Effective RFT% (Right First Time)
+  const effectiveRftPct = useMemo(() => {
+    const v = rftPct != null ? rftPct : passingRatePct;
+    return Math.min(100, Math.max(0, Number(v)));
+  }, [rftPct, passingRatePct]);
+
+  // Compute Defect Rate % from counts when available
+  const computedDefectRate = useMemo(() => {
+    const total = Number(inspectedUnits);
+    let defective = Number(defectiveUnits);
+    if (!Number.isFinite(defective)) defective = sumAllDefects(defects);
+    if (!Number.isFinite(total) || total <= 0) return null; // cannot compute without total
+    const pct = (defective / total) * 100;
+    return Math.min(100, Math.max(0, pct));
+  }, [inspectedUnits, defectiveUnits, defects]);
+
+  // Backward compatible fallback: use legacy rejectPct if we couldn't compute
+  const effectiveDefectRatePct = computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
 
   return (
-    <div
-      className={`relative mx-auto w-full max-w-7xl p-2 sm:p-4 text-white ${className || ""}`}
-    >
+    <div className={`relative mx-auto w/full max-w-7xl p-2 sm:p-4 text-white ${className || ""}`.replace("/full", "/full")}> {/* small fix to avoid accidental // in class */}
       {/* Ambient gradient background for the whole widget */}
       <div className="pointer-events-none absolute -inset-4 -z-10 bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(16,185,129,0.15),transparent),radial-gradient(900px_400px_at_100%_0%,rgba(56,189,248,0.15),transparent)]" />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+        {/* LEFT: Media */}
+        {/* //put space for it// */}
         {/* LEFT: Media */}
         <section className="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-2">
           {/* IMAGE */}
@@ -330,14 +381,18 @@ export default function MediaAndKpisTemplate({
               <div className="mx-auto max-w-xs rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-center">
                 <div className="mb-1 inline-flex items-center gap-1 text-amber-300">
                   <TriangleAlert className="h-4 w-4" />
-                  <span className="text-xs font-semibold">Image Load Failed</span>
+                  <span className="text-xs font-semibold">
+                    Image Load Failed
+                  </span>
                 </div>
                 <ul className="mb-2 text-left text-[11px] text-amber-200/90">
                   <li>• Share as "Anyone with the link"</li>
                   <li>• Permission: Viewer</li>
                   <li>• Check File ID</li>
                 </ul>
-                <div className="font-mono text-[10px] text-white/60 break-all">ID: {extractGoogleDriveId(imageSrc)}</div>
+                <div className="font-mono text-[10px] text-white/60 break-all">
+                  ID: {extractGoogleDriveId(imageSrc)}
+                </div>
                 <a
                   href={imageSrc}
                   target="_blank"
@@ -354,68 +409,61 @@ export default function MediaAndKpisTemplate({
 
           {/* VIDEO */}
           <MediaTile title="Video" icon={PlayCircle}>
-            {videoData && videoData.candidates && videoData.candidates.length ? (
-              <VideoPlayer sources={videoData.candidates} iframeFallback={videoData.embedUrl} />
+            {videoData &&
+            videoData.candidates &&
+            videoData.candidates.length ? (
+              <VideoPlayer
+                sources={videoData.candidates}
+                iframeFallback={videoData.embedUrl}
+              />
             ) : (
               <Placeholder title="Video" />
             )}
           </MediaTile>
         </section>
 
+
         {/* RIGHT: KPIs */}
+
         <aside className="flex min-h-0 flex-col gap-3">
           <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-2">
                 <Gauge className="h-4 w-4 text-emerald-300" />
-                <h3 className="text-sm font-bold uppercase tracking-wider text-white/90">
-                  Top 3 Defects
-                </h3>
+                <h3 className="text-sm uppercase tracking-wider text-white/90">Top 3 Defects</h3>
               </div>
-              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">
-                {new Date().toLocaleTimeString()}
-              </div>
+              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">{new Date().toLocaleTimeString()}</div>
             </div>
 
             {/* List + Pie */}
             <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
-  <ol className="space-y-1 overflow-auto pr-1 text-sm font-semibold">
-    {list.map((d, i) => (
-      <li
-        key={i}
-        className="flex items-center gap-2 rounded-md border border-white/20 bg-white/20 px-2 py-1 shadow-sm ring-1 ring-white/20 transition hover:bg-white/30"
-      >
-        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-slate-900 text-[11px] font-extrabold">
-          {String(i + 1).padStart(2, "0")}
-        </span>
-        <span className="truncate text-white">{d.label}</span>
-        <span className="ml-auto tabular-nums text-xs text-emerald-200">
-          {d.value}
-        </span>
-      </li>
-    ))}
-  </ol>
+              <ol className="space-y-1 overflow-auto pr-1 text-sm font-thin">
+                {list.map((d, i) => (
+                  <li key={i} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/20 px-2 py-1 shadow-sm ring-1 ring-white/20 transition hover:bg-white/30">
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-slate-900 text-[11px] font-extrabold">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="truncate text-white">{d.label}</span>
+                    <span className="ml-auto tabular-nums text-xs text-emerald-200">{d.value}</span>
+                  </li>
+                ))}
+              </ol>
 
-  <div className="grid place-items-center">
-    <DefectsPie defects={list} size={160} thickness={18} />
-  </div>
-</div>
-
+              <div className="grid place-items-center">
+                <DefectsPie defects={list} size={160} thickness={18} />
+              </div>
+            </div>
           </div>
 
           {/* compact KPI rows */}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile label="Passing Rate" value={`${passingRatePct}%`} tone="sky" icon={CheckCircle2} />
-            <KpiTile label="Reject" value={`${rejectPct}%`} tone="red" icon={TriangleAlert} />
+            <KpiTile label="RFT%" value={safePctString(effectiveRftPct)} tone="sky" icon={CheckCircle2} />
+            <KpiTile label="Defect Rate" value={safePctString(effectiveDefectRatePct)} tone="red" icon={TriangleAlert} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile label="Overall DHU%" value={`${overallDHUPct}%`} tone="emerald" icon={TrendingUp} />
+            <KpiTile label="Overall DHU%" value={safePctString(overallDHUPct)} tone="emerald" icon={TrendingUp} />
             <Link href="/HourlyDashboard" className="block">
               <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3 ring-1 ring-white/10 transition-transform duration-200 hover:translate-y-0.5">
-                <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
-                  Open
-                </div>
+                <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">Open</div>
                 <div className="text-sm font-bold text-white/90">Hourly Inspection Report</div>
               </div>
             </Link>
