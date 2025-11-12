@@ -267,33 +267,48 @@ export default function LineInfo() {
         />
 
         {/* Buttons */}
-        <div className="col-span-2 flex justify-between pt-6 gap-4">
-          <a
-            href={`/DailyInProcessedEndLineInspectionReport/${auth?.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-md shadow-md transition-all duration-200 text-lg cursor-pointer"
-          >
-            📊 View Daily Report
-          </a>
+        {/* Buttons */}
+{/* Buttons */}
+<div className="col-span-2 flex justify-between pt-6 gap-3">
+  {/* LEFT: Save / Update + Delete */}
+  <div className="flex gap-2">
+    {existingRecord && (
+      <button
+        onClick={handleDelete}
+        className="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+      >
+        🗑️ Delete
+      </button>
+    )}
+    <button
+      onClick={handleSave}
+      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+    >
+      {existingRecord ? "💾 Update Information" : "💾 Save Information"}
+    </button>
+  </div>
 
-          <div className="flex gap-3">
-            {existingRecord && (
-              <button
-                onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md transition-all duration-200 text-lg cursor-pointer"
-              >
-                🗑️ Delete
-              </button>
-            )}
-            <button
-              onClick={handleSave}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-md shadow-md transition-all duration-200 text-lg cursor-pointer"
-            >
-              {existingRecord ? "💾 Update Information" : "💾 Save Information"}
-            </button>
-          </div>
-        </div>
+  {/* RIGHT: add Image Video + View Daily Report */}
+  <div className="flex gap-18">
+    <a
+      href="/HourlyProductionData"
+      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+    >
+      add Image Video
+    </a>
+
+    <a
+      href={`/DailyInProcessedEndLineInspectionReport/${auth?.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+    >
+      📊 View Daily Report
+    </a>
+  </div>
+</div>
+
+
       </div>
 
       {/* Footer */}

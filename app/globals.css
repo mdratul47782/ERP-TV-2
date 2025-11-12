@@ -7,7 +7,7 @@
 }
 
 /* Dark theme tokens (activated when html has .dark) */
-html.dark {
+html.white {
   --background: #0b1220;   /* deep slate */
   --foreground: #f5f6f8;   /* near white */
 }

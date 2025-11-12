@@ -134,7 +134,7 @@ export default function NavBar() {
 
           {/* Right side: theme toggle + user chip */}
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             <div className="hidden md:flex items-center gap-2">
               <span className="text-xs text-slate-600 dark:text-gray-400">User</span>
               <span className="rounded-md border border-black/10 bg-black/[0.03] px-2 py-1 text-xs text-slate-900

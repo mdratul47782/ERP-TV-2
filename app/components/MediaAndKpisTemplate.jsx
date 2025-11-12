@@ -379,22 +379,28 @@ export default function MediaAndKpisTemplate({
 
             {/* List + Pie */}
             <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
-              <ol className="space-y-1 overflow-auto pr-1 text-sm font-semibold">
-                {list.map((d, i) => (
-                  <li key={i} className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.06] px-2 py-1">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white/20 text-[11px] font-bold">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="truncate text-white/90">{d.label}</span>
-                    <span className="ml-auto tabular-nums text-xs text-white/80">{d.value}</span>
-                  </li>
-                ))}
-              </ol>
+  <ol className="space-y-1 overflow-auto pr-1 text-sm font-semibold">
+    {list.map((d, i) => (
+      <li
+        key={i}
+        className="flex items-center gap-2 rounded-md border border-white/20 bg-white/20 px-2 py-1 shadow-sm ring-1 ring-white/20 transition hover:bg-white/30"
+      >
+        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-slate-900 text-[11px] font-extrabold">
+          {String(i + 1).padStart(2, "0")}
+        </span>
+        <span className="truncate text-white">{d.label}</span>
+        <span className="ml-auto tabular-nums text-xs text-emerald-200">
+          {d.value}
+        </span>
+      </li>
+    ))}
+  </ol>
 
-              <div className="grid place-items-center">
-                <DefectsPie defects={list} size={160} thickness={18} />
-              </div>
-            </div>
+  <div className="grid place-items-center">
+    <DefectsPie defects={list} size={160} thickness={18} />
+  </div>
+</div>
+
           </div>
 
           {/* compact KPI rows */}
