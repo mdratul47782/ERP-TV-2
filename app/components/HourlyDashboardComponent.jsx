@@ -54,6 +54,14 @@ export default function HourlyDashboardComponent({
     );
   }
 
+  if (!auth) {
+    return (
+      <div className="text-center mt-6 text-red-600 font-medium">
+        ⚠️ Please log in to view hourly inspection data.
+      </div>
+    );
+  }
+
   // ✅ Compare reportDate to selected yyyy-mm-dd (LOCAL time)
   const isSameDay = (dateStr, ymd) => {
     if (!dateStr || !ymd) return false;
