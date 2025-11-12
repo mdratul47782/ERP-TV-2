@@ -45,11 +45,12 @@ function serializeHourly(docs) {
   }));
 }
 
+// ...same imports
+
 export default async function DailyInProcessedEndLineInspectionReport({ params }) {
-  const { id } = await params; // For Next 15; use params.id on 14
+  const { id } = await params;
   const registerObjectId = new mongoose.Types.ObjectId(id);
 
-  // Fetch data
   const [hourlyData, allHourly, productionData, registerData, users] =
     await Promise.all([
       HourlyInspectionModel.find({ "lineInfo.registerId": registerObjectId }).lean(),
@@ -59,7 +60,6 @@ export default async function DailyInProcessedEndLineInspectionReport({ params }
       userModel.find({}).lean(),
     ]);
 
-  // Serialize all Mongo objects to safe JSON
   const safeAllHourly = serializeHourly(allHourly);
   const safeRegisterData = safeJson(registerData);
   const safeProductionData = safeJson(productionData);
@@ -68,9 +68,8 @@ export default async function DailyInProcessedEndLineInspectionReport({ params }
   console.log("✅ Server-side data fetched successfully");
 
   return (
-    <div className="text-black">
-      {/* ✅ All data is now serializable */}
-      <InspectionTopInput id={id} registerData={safeRegisterData} />
+    <div className="min-h-screen bg-white text-slate-900">
+      <InspectionTopInput id={id} registerData={safeRegisterData} theme="light" />
       <DefectEntryForm
         id={id}
         hourlyData={safeAllHourly}

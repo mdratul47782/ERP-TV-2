@@ -5,8 +5,18 @@ import { useAuth } from "../hooks/useAuth";
 
 // -------- helpers --------
 const hourOptions = [
-  "1st Hour","2nd Hour","3rd Hour","4th Hour","5th Hour","6th Hour",
-  "7th Hour","8th Hour","9th Hour","10th Hour","11th Hour","12th Hour",
+  "1st Hour",
+  "2nd Hour",
+  "3rd Hour",
+  "4th Hour",
+  "5th Hour",
+  "6th Hour",
+  "7th Hour",
+  "8th Hour",
+  "9th Hour",
+  "10th Hour",
+  "11th Hour",
+  "12th Hour",
 ];
 
 const defectOptions = [
@@ -78,7 +88,6 @@ const defectOptions = [
   "366 - COATING PROBLEM",
 ];
 
-
 function toLocalDateLabel(d = new Date()) {
   // Human-friendly title: e.g., "Mon, Nov 10, 2025"
   return d.toLocaleDateString(undefined, {
@@ -96,16 +105,14 @@ function todayIsoForApi() {
 
 function getUserIdFromAuth(auth) {
   // Be flexible with shapes:
-  return (
-    auth?.user?.id ||
-    auth?.user?._id ||
-    auth?.id ||
-    auth?._id ||
-    null
-  );
+  return auth?.user?.id || auth?.user?._id || auth?.id || auth?._id || null;
 }
 // --- Searchable dropdown for defects (no deps) ---
-function SearchableDefectPicker({ options, onSelect, placeholder = "Search defect by name..." }) {
+function SearchableDefectPicker({
+  options,
+  onSelect,
+  placeholder = "Search defect by name...",
+}) {
   const [query, setQuery] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const [hi, setHi] = React.useState(0);
@@ -116,12 +123,14 @@ function SearchableDefectPicker({ options, onSelect, placeholder = "Search defec
     return options.filter((o) => o.toLowerCase().includes(q)).slice(0, 50);
   }, [query, options]);
 
-  React.useEffect(() => { setHi(0); }, [query, open]);
+  React.useEffect(() => {
+    setHi(0);
+  }, [query, open]);
 
   const selectValue = (val) => {
-    onSelect(val);      // <-- your existing handler
-    setQuery("");       // clear input
-    setOpen(false);     // close list
+    onSelect(val); // <-- your existing handler
+    setQuery(""); // clear input
+    setOpen(false); // close list
   };
 
   return (
@@ -132,12 +141,24 @@ function SearchableDefectPicker({ options, onSelect, placeholder = "Search defec
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 120)} // allow click
         onKeyDown={(e) => {
-          if (!open && (e.key === "ArrowDown" || e.key === "Enter")) setOpen(true);
+          if (!open && (e.key === "ArrowDown" || e.key === "Enter"))
+            setOpen(true);
           if (!filtered.length) return;
-          if (e.key === "ArrowDown") { e.preventDefault(); setHi((i) => Math.min(i + 1, filtered.length - 1)); }
-          if (e.key === "ArrowUp")   { e.preventDefault(); setHi((i) => Math.max(i - 1, 0)); }
-          if (e.key === "Enter")     { e.preventDefault(); selectValue(filtered[hi]); }
-          if (e.key === "Escape")    { setOpen(false); }
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setHi((i) => Math.min(i + 1, filtered.length - 1));
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setHi((i) => Math.max(i - 1, 0));
+          }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            selectValue(filtered[hi]);
+          }
+          if (e.key === "Escape") {
+            setOpen(false);
+          }
         }}
         className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
         placeholder={placeholder}
@@ -156,7 +177,9 @@ function SearchableDefectPicker({ options, onSelect, placeholder = "Search defec
                 onMouseDown={(e) => e.preventDefault()} // keep focus for blur delay
                 onClick={() => selectValue(opt)}
                 className={`block w-full text-left px-2 py-1.5 text-sm ${
-                  idx === hi ? "bg-emerald-50 text-emerald-700" : "hover:bg-gray-50"
+                  idx === hi
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "hover:bg-gray-50"
                 }`}
               >
                 {opt}
@@ -242,10 +265,7 @@ export default function EndlineDashboard() {
       if (!currentDefects.some((d) => d.name === defect)) {
         return {
           ...prev,
-          selectedDefects: [
-            ...currentDefects,
-            { name: defect, quantity: "" },
-          ],
+          selectedDefects: [...currentDefects, { name: defect, quantity: "" }],
         };
       }
       return prev;
@@ -315,8 +335,8 @@ export default function EndlineDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userId,                 // preferred (server-side filter friendly)
-          userName: userName,             // label stored in row.user
+          userId: userId, // preferred (server-side filter friendly)
+          userName: userName, // label stored in row.user
           entries: [buildEntryPayload()], // single entry
           reportDate: new Date().toISOString(), // ensure today's bucket
         }),
@@ -364,11 +384,12 @@ export default function EndlineDashboard() {
   // ---- UI ----
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl p-4 md:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl p-4 md:p-6 ">
+        <div className="mb-4 flex items-center justify-between gap-3  ">
           <div>
             <h1 className="text-xl font-bold">
-              Endline Hourly Dashboard — <span className="text-indigo-600">{userName}</span>
+              Endline Hourly Dashboard —{" "}
+              <span className="text-indigo-600">{userName}</span>
             </h1>
             <p className="text-sm text-gray-600">Today: {todayLabel}</p>
           </div>
@@ -388,11 +409,13 @@ export default function EndlineDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 ">
           {/* LEFT: fixed single form */}
-          <div className="md:sticky md:top-4 md:h-fit">
+          <div className="md:sticky md:top-4 md:h-fit ">
             <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold text-gray-700">Add/Update Hour</h2>
+              <h2 className="mb-3 text-sm font-semibold text-gray-700">
+                Add/Update Hour
+              </h2>
 
               <div className="mb-3">
                 <label className="mb-1 block text-xs font-medium text-gray-700">
@@ -413,18 +436,17 @@ export default function EndlineDashboard() {
               </div>
 
               <div className="mb-3">
-  <label className="mb-1 block text-xs font-medium text-gray-700">
-    Add Defect
-  </label>
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Add Defect
+                </label>
 
-  <SearchableDefectPicker
-    options={defectOptions}
-    onSelect={(val) => {
-      handleSelectDefect(val); // unchanged functionality
-    }}
-  />
-</div>
-
+                <SearchableDefectPicker
+                  options={defectOptions}
+                  onSelect={(val) => {
+                    handleSelectDefect(val); // unchanged functionality
+                  }}
+                />
+              </div>
 
               {form.selectedDefects.length > 0 && (
                 <div className="mb-3 space-y-1">
@@ -533,7 +555,9 @@ export default function EndlineDashboard() {
             <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
               <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
                 <div className="text-xs text-gray-500">Inspected</div>
-                <div className="text-lg font-semibold">{totals.inspectedQty}</div>
+                <div className="text-lg font-semibold">
+                  {totals.inspectedQty}
+                </div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
                 <div className="text-xs text-gray-500">Passed</div>
@@ -541,7 +565,9 @@ export default function EndlineDashboard() {
               </div>
               <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
                 <div className="text-xs text-gray-500">Defects</div>
-                <div className="text-lg font-semibold">{totals.totalDefects}</div>
+                <div className="text-lg font-semibold">
+                  {totals.totalDefects}
+                </div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-white p-3 text-center">
                 <div className="text-xs text-gray-500">Pass Rate</div>
@@ -554,7 +580,9 @@ export default function EndlineDashboard() {
                 <h2 className="text-sm font-semibold text-gray-700">
                   Today’s Entries ({rows.length})
                 </h2>
-                {loading && <span className="text-xs text-gray-500">Loading...</span>}
+                {loading && (
+                  <span className="text-xs text-gray-500">Loading...</span>
+                )}
               </div>
 
               {rows.length === 0 ? (
@@ -573,28 +601,46 @@ export default function EndlineDashboard() {
                           {r.hourLabel}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {new Date(r.updatedAt || r.createdAt).toLocaleTimeString()}
+                          {new Date(
+                            r.updatedAt || r.createdAt
+                          ).toLocaleTimeString()}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 md:grid-cols-5">
-                        <div><span className="text-gray-500">Inspected:</span> {r.inspectedQty}</div>
-                        <div><span className="text-gray-500">Passed:</span> {r.passedQty}</div>
-                        <div><span className="text-gray-500">Def.Pcs:</span> {r.defectivePcs}</div>
-                        <div><span className="text-gray-500">After Repair:</span> {r.afterRepair}</div>
-                        <div><span className="text-gray-500">Total Defects:</span> {r.totalDefects}</div>
-                      </div>
-                      {Array.isArray(r.selectedDefects) && r.selectedDefects.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {r.selectedDefects.map((d, i) => (
-                            <span
-                              key={`${d.name}-${i}`}
-                              className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700"
-                            >
-                              {d.name}: {d.quantity}
-                            </span>
-                          ))}
+                        <div>
+                          <span className="text-gray-500">Inspected:</span>{" "}
+                          {r.inspectedQty}
                         </div>
-                      )}
+                        <div>
+                          <span className="text-gray-500">Passed:</span>{" "}
+                          {r.passedQty}
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Def.Pcs:</span>{" "}
+                          {r.defectivePcs}
+                        </div>
+                        <div>
+                          <span className="text-gray-500">After Repair:</span>{" "}
+                          {r.afterRepair}
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Total Defects:</span>{" "}
+                          {r.totalDefects}
+                        </div>
+                      </div>
+                      {Array.isArray(r.selectedDefects) &&
+                        r.selectedDefects.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {r.selectedDefects.map((d, i) => (
+                              <span
+                                key={`${d.name}-${i}`}
+                                className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700"
+                              >
+                                {d.name}: {d.quantity}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                     </li>
                   ))}
                 </ul>

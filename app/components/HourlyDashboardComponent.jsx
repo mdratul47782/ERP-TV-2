@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../hooks/useAuth";
 
 export default function HourlyDashboardComponent({
@@ -12,6 +12,19 @@ export default function HourlyDashboardComponent({
 }) {
   const { auth } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // --- Helpers
+  const toLocalYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  // Selected date (defaults to today or ?date= from URL if present)
+  const initialDate = searchParams?.get("date") || toLocalYMD(new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate);
 
   // Show when props last changed (useful to see refresh working)
   const [lastUpdate, setLastUpdate] = useState(new Date());
@@ -35,25 +48,20 @@ export default function HourlyDashboardComponent({
     );
   }
 
-  // ✅ Check if a date is today
-  const isToday = (dateStr) => {
-    if (!dateStr) return false;
-    const date = new Date(dateStr);
-    const now = new Date();
-    return (
-      date.getDate() === now.getDate() &&
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear()
-    );
+  // ✅ Compare reportDate to selected yyyy-mm-dd (LOCAL time)
+  const isSameDay = (dateStr, ymd) => {
+    if (!dateStr || !ymd) return false;
+    const d = new Date(dateStr);
+    return toLocalYMD(d) === ymd;
   };
 
-  // ✅ Filter only today's data for this user (from props)
+  // ✅ Filter only selected date's data for this user (from props)
   const userHourlyData = useMemo(
     () =>
       (Array.isArray(hourlyData) ? hourlyData : []).filter(
-        (h) => h?.user?.user_name === auth.user_name && isToday(h?.reportDate)
+        (h) => h?.user?.user_name === auth.user_name && isSameDay(h?.reportDate, selectedDate)
       ),
-    [hourlyData, auth.user_name]
+    [hourlyData, auth.user_name, selectedDate]
   );
 
   // ✅ Utility to create ordinal labels
@@ -101,7 +109,7 @@ export default function HourlyDashboardComponent({
     return "bg-red-50 text-red-700 ring-1 ring-red-200";
   };
 
-  // ✅ All unique defect names across hours
+  // ✅ All unique defect names across hours (for selected date)
   const allDefects = useMemo(
     () =>
       Array.from(
@@ -112,37 +120,84 @@ export default function HourlyDashboardComponent({
     [userHourlyData]
   );
 
+  const handlePrint = () => {
+    setTimeout(() => window.print(), 50);
+  };
+
+  const handleDateChange = (e) => {
+    const ymd = e.target.value;
+    setSelectedDate(ymd);
+    // Keep URL in sync so the server can fetch by date
+    const sp = new URLSearchParams(searchParams?.toString());
+    sp.set("date", ymd);
+    router.replace(`?${sp.toString()}`);
+    router.refresh();
+  };
+
+  const jumpToToday = () => {
+    const today = toLocalYMD(new Date());
+    setSelectedDate(today);
+    const sp = new URLSearchParams(searchParams?.toString());
+    sp.set("date", today);
+    router.replace(`?${sp.toString()}`);
+    router.refresh();
+  };
+
   return (
     <div className="mt-4 text-gray-800">
-      {/* tiny status line to confirm refreshes */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-[10px] text-gray-500">
-          Last update:{" "}
-          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5">
-            {lastUpdate.toLocaleTimeString()}
-          </span>
+      {/* Top bar: status + date picker + Print */}
+      <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between no-print">
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] text-gray-500">
+            Last update:{" "}
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5">
+              {lastUpdate.toLocaleTimeString()}
+            </span>
+          </div>
+          <div className="text-[10px] text-gray-500">
+            Viewing date:{" "}
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5">
+              {selectedDate}
+            </span>
+          </div>
         </div>
 
-        {/* Legend for rate colors */}
-        {/* <div className="hidden md:flex items-center gap-2 text-[10px]">
-          <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 ring-1 ring-green-200">
-            ≤ 1% Good
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200">
-            1–3% Watch
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-700 ring-1 ring-red-200">
-            &gt; 3% Action
-          </span>
-        </div> */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs md:text-sm text-gray-700" htmlFor="date">
+            Pick date:
+          </label>
+          <input
+            id="date"
+            type="date"
+            value={selectedDate}
+            onChange={handleDateChange}
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <button
+            type="button"
+            onClick={jumpToToday}
+            className="rounded-md bg-white px-3 py-1.5 text-xs md:text-sm font-medium text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50"
+            title="Jump to today"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs md:text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+            title="Print (Excel-style)"
+          >
+            Print
+          </button>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
         <table
-          className="w-full min-w-[1200px] border-collapse text-[11px] md:text-sm"
+          className="excel-table tabular-nums w-full min-w-[1200px] border-collapse text-[11px] md:text-sm"
           aria-label="Hourly Defect Summary"
         >
-          <thead className="sticky top-0 z-20">
+          <thead className="sticky top-0 z-20 excel-header">
             <tr className="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-800">
               <th
                 className="sticky left-0 z-30 border border-gray-200 px-3 py-2 text-left font-semibold shadow-[4px_0_0_0_rgba(0,0,0,0.04)] bg-gradient-to-r from-slate-100 to-slate-200"
@@ -193,7 +248,7 @@ export default function HourlyDashboardComponent({
                   colSpan={hours.length + 1}
                   className="text-center text-gray-500 py-6 border border-gray-200 bg-white"
                 >
-                  No defect data found for today.
+                  No defect data found for the selected date.
                 </td>
               </tr>
             )}
@@ -273,7 +328,11 @@ export default function HourlyDashboardComponent({
                     key={i}
                     className="border border-gray-200 px-3 py-2 text-center font-bold"
                   >
-                    <span className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(info.defectiveRate)}`}>
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(
+                        info.defectiveRate
+                      )}`}
+                    >
                       {calculateDefectiveRate(getHourlyByLabel(hr))}
                     </span>
                   </td>
@@ -293,7 +352,11 @@ export default function HourlyDashboardComponent({
                     key={i}
                     className="border border-gray-200 px-3 py-2 text-center font-bold"
                   >
-                    <span className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(info.dhu)}`}>
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(
+                        info.dhu
+                      )}`}
+                    >
                       {calculateDHU(getHourlyByLabel(hr))}
                     </span>
                   </td>
@@ -303,6 +366,87 @@ export default function HourlyDashboardComponent({
           </tbody>
         </table>
       </div>
+
+      {/* Print styles */}
+      <style jsx global>{`
+        /* Page setup */
+        @media print {
+          @page {
+            size: A4 landscape;
+            margin: 10mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+
+        /* Hide UI chrome in print */
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+        }
+
+        /* Excel-like table look for print */
+        @media print {
+          /* Remove sticky/gradients/shadows for clean pagination */
+          .excel-table thead,
+          .excel-table thead tr,
+          .excel-table th.sticky,
+          .excel-table td.sticky,
+          .excel-table .sticky {
+            position: static !important;
+            inset: auto !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+          }
+
+          /* Repeat header each printed page */
+          .excel-table thead {
+            display: table-header-group !important;
+          }
+
+          /* Gridlines and compact spacing */
+          .excel-table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            font-size: 11px !important;
+            line-height: 1.25 !important;
+            background: #ffffff !important;
+          }
+          .excel-table th,
+          .excel-table td {
+            border: 1px solid #9ca3af !important; /* slate-400 */
+            padding: 6px 8px !important;
+            color: #111827 !important; /* gray-900 */
+          }
+
+          /* Header style (Excel-ish light gray fill) */
+          .excel-header tr th {
+            background: #e5e7eb !important; /* gray-200 */
+            color: #111827 !important;
+            font-weight: 700 !important;
+          }
+
+          /* Avoid breaking a row across pages */
+          .excel-table tr {
+            break-inside: avoid !important;
+          }
+
+          /* Remove zebra/hover tint which may not print reliably */
+          .excel-table tr,
+          .excel-table td,
+          .excel-table th {
+            background-image: none !important;
+          }
+        }
+
+        /* Align numbers in columns */
+        .tabular-nums {
+          font-variant-numeric: tabular-nums;
+        }
+      `}</style>
     </div>
   );
 }
