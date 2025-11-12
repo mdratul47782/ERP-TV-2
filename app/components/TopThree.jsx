@@ -7,15 +7,15 @@ export default function TopThreeDefects({ hourlyData = [] }) {
   const { auth } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Auto-refresh every 5 seconds
+  // 🔁 Auto-refresh every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
+  // 🚫 If user not logged in
   if (!auth) {
     return (
       <div className="text-center text-red-600 font-medium mt-4">
@@ -24,12 +24,12 @@ export default function TopThreeDefects({ hourlyData = [] }) {
     );
   }
 
-  // Get today's date at midnight for comparison
+  // 🕛 Today's date range
   const todayStart = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
-  }, [refreshKey]); // Recalculate on refresh to handle day changes
+  }, [refreshKey]);
 
   const todayEnd = useMemo(() => {
     const today = new Date();
@@ -37,26 +37,26 @@ export default function TopThreeDefects({ hourlyData = [] }) {
     return today;
   }, [refreshKey]);
 
-  // Filter for current day and current user based on reportDate
+  // 🧩 Filter today's data for the logged-in user
   const todayUserData = useMemo(() => {
     return hourlyData.filter((h) => {
       if (h?.user?.user_name !== auth.user_name) return false;
-      
-      // Use reportDate for filtering
       if (!h.reportDate) return false;
-      
+
       const reportDate = new Date(h.reportDate.$date || h.reportDate);
       return reportDate >= todayStart && reportDate <= todayEnd;
     });
   }, [hourlyData, auth.user_name, todayStart, todayEnd, refreshKey]);
 
-  // Calculate top 3 defects
+  // 🧮 Calculate top 3 defects
   const topDefects = useMemo(() => {
     const defectMap = {};
     let totalInspected = 0;
 
     todayUserData.forEach((entry) => {
-      totalInspected += entry?.inspectedQty ?? 0;
+      const inspectedQty = entry?.inspectedQty ?? 0;
+      totalInspected += inspectedQty;
+
       (entry.selectedDefects || []).forEach((defect) => {
         if (!defectMap[defect.name]) {
           defectMap[defect.name] = { quantity: 0 };
@@ -65,19 +65,23 @@ export default function TopThreeDefects({ hourlyData = [] }) {
       });
     });
 
-    // Convert to array
-    const defectArray = Object.entries(defectMap).map(([name, { quantity }]) => ({
-      name,
-      quantity,
-      percentage: totalInspected
-        ? ((quantity / totalInspected) * 100).toFixed(2)
-        : "0.00",
-    }));
+    const defectArray = Object.entries(defectMap).map(
+      ([name, { quantity }]) => ({
+        name,
+        quantity,
+        // ✅ Accurate calculation: (defect qty / total inspected qty) × 100
+        percentage:
+          totalInspected > 0
+            ? ((quantity / totalInspected) * 100).toFixed(2)
+            : "0.00",
+      })
+    );
 
-    // Sort by quantity desc and return top 3
+    // Sort by highest quantity → top 3
     return defectArray.sort((a, b) => b.quantity - a.quantity).slice(0, 3);
   }, [todayUserData, refreshKey]);
 
+  // 🚫 No defects found
   if (topDefects.length === 0) {
     return (
       <div className="text-center text-gray-500 mt-4">
@@ -86,6 +90,7 @@ export default function TopThreeDefects({ hourlyData = [] }) {
     );
   }
 
+  // 🧱 UI
   return (
     <div className="w-full max-w-4xl mx-auto mt-3">
       {/* Header */}
@@ -98,10 +103,10 @@ export default function TopThreeDefects({ hourlyData = [] }) {
 
       {/* Table layout */}
       <div className="grid grid-cols-4 text-center text-white text-xs font-semibold">
-        {/* Table header row */}
+        {/* Header row */}
         <div className="bg-red-600 border border-white py-2">RANK</div>
         <div className="bg-red-600 border border-white py-2">DEFECT NAME</div>
-        <div className="bg-red-600 border border-white py-2">DEFECT QUANTITY</div>
+        <div className="bg-red-600 border border-white py-2">DEFECT QTY</div>
         <div className="bg-red-600 border border-white py-2">DEFECT %</div>
 
         {/* Data rows */}

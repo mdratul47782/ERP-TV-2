@@ -17,7 +17,9 @@ const Placeholder = ({ title }) => (
     <div className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wider text-white/80">
       No {title.toLowerCase()}
     </div>
-    <div className="text-xs text-white/60">Add {title.toLowerCase()} in Media Links Editor</div>
+    <div className="text-xs text-white/60">
+      Add {title.toLowerCase()} in Media Links Editor
+    </div>
   </div>
 );
 
@@ -58,7 +60,9 @@ function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
         <span className="text-xs text-white/70">KPI</span>
       </div>
 
-      <div className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white">{value}</div>
+      <div className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white">
+        {value}
+      </div>
     </div>
   );
 }
@@ -70,7 +74,9 @@ function MediaTile({ title, icon: Icon, children }) {
         {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
         {title}
       </div>
-      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30">{children}</div>
+      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30">
+        {children}
+      </div>
     </div>
   );
 }
@@ -100,7 +106,8 @@ function convertToDirectImageUrl(url) {
   if (!url) return "";
   if (isGoogleDriveUrl(url)) {
     const fileId = extractGoogleDriveId(url);
-    if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    if (fileId)
+      return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
   return url;
 }
@@ -147,8 +154,13 @@ function parseDefect(d, i) {
     if (!Number.isFinite(value) || value < 0) value = 0;
     return { label, value };
   }
-  const label = d && (d.label || d.name) ? (d.label || d.name).toString() : `Defect ${i + 1}`;
-  let value = Number(d && (d.value != null ? d.value : d.count != null ? d.count : 0));
+  const label =
+    d && (d.label || d.name)
+      ? (d.label || d.name).toString()
+      : `Defect ${i + 1}`;
+  let value = Number(
+    d && (d.value != null ? d.value : d.count != null ? d.count : 0)
+  );
   if (!Number.isFinite(value) || value < 0) value = 0;
   return { label, value };
 }
@@ -185,7 +197,12 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
           {/* base ring */}
-          <circle r={r} fill="none" stroke="rgba(255,255,255,.15)" strokeWidth={thickness} />
+          <circle
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,.15)"
+            strokeWidth={thickness}
+          />
 
           {/* slices */}
           {total > 0 &&
@@ -214,21 +231,34 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
 
       {/* center total */}
       <div className="pointer-events-none absolute grid place-items-center text-center">
-        <div className="text-[10px] uppercase tracking-wider text-white/60">Total</div>
-        <div className="text-2xl font-extrabold tabular-nums text-white">{total}</div>
+        <div className="text-[10px] uppercase tracking-wider text-white/60">
+          Total
+        </div>
+        <div className="text-2xl font-extrabold tabular-nums text-white">
+          {total}
+        </div>
       </div>
 
       {/* legend */}
       <div className="mt-3 w-full grid grid-cols-3 gap-2 text-[11px]">
-        {(norm.length ? norm : [
-          { label: "—", value: 0 },
-          { label: "—", value: 0 },
-          { label: "—", value: 0 },
-        ]).map((s, i) => {
+        {(norm.length
+          ? norm
+          : [
+              { label: "—", value: 0 },
+              { label: "—", value: 0 },
+              { label: "—", value: 0 },
+            ]
+        ).map((s, i) => {
           const pct = total > 0 ? (s.value / total) * 100 : 0;
           return (
-            <div key={i} className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1">
-              <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+            <div
+              key={i}
+              className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1"
+            >
+              <span
+                className="h-3 w-3 rounded-sm shrink-0"
+                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+              />
               <span className="truncate text-white/90">{s.label}</span>
               <span className="ml-auto text-white/70">{pct.toFixed(1)}%</span>
             </div>
@@ -314,22 +344,34 @@ export default function MediaAndKpisTemplate({
     if (isGoogleDriveUrl(imageSrc)) {
       const fileId = extractGoogleDriveId(imageSrc);
       if (!fileId) return "";
-      if (imgAttempt === 0) return `https://drive.google.com/uc?export=download&id=${fileId}`;
-      if (imgAttempt === 1) return `https://drive.google.com/uc?export=view&id=${fileId}`;
-      if (imgAttempt === 2) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+      if (imgAttempt === 0)
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
+      if (imgAttempt === 1)
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      if (imgAttempt === 2)
+        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
     }
     return convertToDirectImageUrl(imageSrc);
   }, [imageSrc, imgAttempt]);
 
-  const videoData = useMemo(() => convertToDirectVideoUrl(videoSrc), [videoSrc]);
+  const videoData = useMemo(
+    () => convertToDirectVideoUrl(videoSrc),
+    [videoSrc]
+  );
 
   // Normalize once for list + pie (true Top 3)
-  const normalizedDefects = useMemo(() => normalizeDefects(defects || [], 3), [defects]);
-  const list = normalizedDefects.length > 0 ? normalizedDefects : [
-    { label: "—", value: 0 },
-    { label: "—", value: 0 },
-    { label: "—", value: 0 },
-  ];
+  const normalizedDefects = useMemo(
+    () => normalizeDefects(defects || [], 3),
+    [defects]
+  );
+  const list =
+    normalizedDefects.length > 0
+      ? normalizedDefects
+      : [
+          { label: "—", value: 0 },
+          { label: "—", value: 0 },
+          { label: "—", value: 0 },
+        ];
 
   // ---- Calculations ----
   // Effective RFT% (Right First Time)
@@ -349,13 +391,19 @@ export default function MediaAndKpisTemplate({
   }, [inspectedUnits, defectiveUnits, defects]);
 
   // Backward compatible fallback: use legacy rejectPct if we couldn't compute
-  const effectiveDefectRatePct = computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
+  const effectiveDefectRatePct =
+    computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
 
   return (
-    <div className={`relative mx-auto w/full max-w-7xl p-2 sm:p-4 text-white ${className || ""}`.replace("/full", "/full")}> {/* small fix to avoid accidental // in class */}
+    <div
+      className={`relative mx-auto w/full max-w-7xl p-2 sm:p-4 text-white ${
+        className || ""
+      }`.replace("/full", "/full")}
+    >
+      {" "}
+      {/* small fix to avoid accidental // in class */}
       {/* Ambient gradient background for the whole widget */}
       <div className="pointer-events-none absolute -inset-4 -z-10 bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(16,185,129,0.15),transparent),radial-gradient(900px_400px_at_100%_0%,rgba(56,189,248,0.15),transparent)]" />
-
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         {/* LEFT: Media */}
         {/* //put space for it// */}
@@ -422,7 +470,6 @@ export default function MediaAndKpisTemplate({
           </MediaTile>
         </section>
 
-
         {/* RIGHT: KPIs */}
 
         <aside className="flex min-h-0 flex-col gap-3">
@@ -430,21 +477,50 @@ export default function MediaAndKpisTemplate({
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-2">
                 <Gauge className="h-4 w-4 text-emerald-300" />
-                <h3 className="text-sm uppercase tracking-wider text-white/90">Top 3 Defects</h3>
+                <h3 className="text-sm uppercase tracking-wider text-white/90">
+                  Top 3 Defects
+                </h3>
               </div>
-              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">{new Date().toLocaleTimeString()}</div>
+              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">
+                {new Date().toLocaleTimeString()}
+              </div>
             </div>
 
             {/* List + Pie */}
             <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
               <ol className="space-y-1 overflow-auto pr-1 text-sm font-thin">
-                {list.map((d, i) => (
-                  <li key={i} className="flex items-center gap-2 rounded-md border border-white/20 bg-white/20 px-2 py-1 shadow-sm ring-1 ring-white/20 transition hover:bg-white/30">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-slate-900 text-[11px] font-extrabold">{String(i + 1).padStart(2, "0")}</span>
-                    <span className="truncate text-white">{d.label}</span>
-                    <span className="ml-auto tabular-nums text-xs text-emerald-200">{d.value}</span>
-                  </li>
-                ))}
+                {list.map((d, i) => {
+                  const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
+                  const color = COLORS[i % COLORS.length];
+                  return (
+                    <li
+                      key={i}
+                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
+                    >
+                      {/* colored index box */}
+                      <span
+                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
+                        style={{
+                          backgroundColor: color,
+                          color: "black",
+                        }}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+
+                      {/* defect name */}
+                      <span className="truncate text-white">{d.label}</span>
+
+                      {/* defect count */}
+                      <span
+                        className="ml-auto tabular-nums text-xs"
+                        style={{ color }}
+                      >
+                        {d.value}
+                      </span>
+                    </li>
+                  );
+                })}
               </ol>
 
               <div className="grid place-items-center">
@@ -455,16 +531,35 @@ export default function MediaAndKpisTemplate({
 
           {/* compact KPI rows */}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile label="RFT%" value={safePctString(effectiveRftPct)} tone="sky" icon={CheckCircle2} />
-            <KpiTile label="Defect Rate" value={safePctString(effectiveDefectRatePct)} tone="red" icon={TriangleAlert} />
+            <KpiTile
+              label="RFT%"
+              value={safePctString(effectiveRftPct)}
+              tone="sky"
+              icon={CheckCircle2}
+            />
+            <KpiTile
+              label="Defect Rate"
+              value={safePctString(effectiveDefectRatePct)}
+              tone="red"
+              icon={TriangleAlert}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile label="Overall DHU%" value={safePctString(overallDHUPct)} tone="emerald" icon={TrendingUp} />
+            <KpiTile
+              label="Overall DHU%"
+              value={safePctString(overallDHUPct)}
+              tone="emerald"
+              icon={TrendingUp}
+            />
             <Link href="/HourlyDashboard" className="block">
               <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3 ring-1 ring-white/10 transition-transform duration-200 hover:translate-y-0.5">
-                <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">Open</div>
-                <div className="text-sm font-bold text-white/90">Hourly Inspection Report</div>
+                <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
+                  Open
+                </div>
+                <div className="text-sm font-bold text-white/90">
+                  Hourly Inspection Report
+                </div>
               </div>
             </Link>
           </div>
