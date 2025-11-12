@@ -94,12 +94,26 @@ export default function QualitySummaryComponent({
     [todayUserHourly]
   );
 
-  const pct = (num, den) =>
-    den ? Math.round((Number(num) / Number(den)) * 100) : 0;
+  // Accurate ratios (NOT rounded). Return null when denominator invalid.
+  const ratio = (num, den) => {
+    const n = Number(num);
+    const d = Number(den);
+    if (!Number.isFinite(n) || !Number.isFinite(d) || d <= 0) return null;
+    return n / d; // e.g., 0.6775 (MediaAndKpisTemplate formats this to 67.75%)
+  };
 
-  const passingRatePct = pct(totalPassed, totalInspected);
-  const rejectPct = pct(totalDefectivePcs, totalInspected);
-  const overallDHUPct = pct(totalDefects, totalInspected);
+  const rftRatio = useMemo(
+    () => ratio(totalPassed, totalInspected),
+    [totalPassed, totalInspected]
+  );
+  const rejectRatio = useMemo(
+    () => ratio(totalDefectivePcs, totalInspected),
+    [totalDefectivePcs, totalInspected]
+  );
+  const dhuRatio = useMemo(
+    () => ratio(totalDefects, totalInspected),
+    [totalDefects, totalInspected]
+  );
 
   // ✅ Top 3 defects across today's hours for this user
   const top3Defects = useMemo(() => {
@@ -123,9 +137,16 @@ export default function QualitySummaryComponent({
         imageSrc={imageSrc}
         videoSrc={videoSrc}
         defects={top3Defects.length ? top3Defects : ["—", "—", "—"]}
-        passingRatePct={passingRatePct}
-        rejectPct={rejectPct}
-        overallDHUPct={overallDHUPct}
+        // Use ratios for precise display; the template's formatter will show two decimals
+        rftPct={rftRatio}
+        // Provide counts so Defect Rate is computed exactly in the child
+        inspectedUnits={totalInspected}
+        defectiveUnits={totalDefectivePcs}
+        // Overall DHU as a ratio as well
+        overallDHUPct={dhuRatio}
+        // Optional: keep legacy props for backward-compatibility
+        passingRatePct={rftRatio != null ? rftRatio * 100 : 0}
+        rejectPct={rejectRatio != null ? rejectRatio * 100 : 0}
       />
     </div>
   );

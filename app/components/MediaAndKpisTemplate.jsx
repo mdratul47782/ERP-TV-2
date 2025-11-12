@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Image as ImageIcon,
@@ -26,11 +26,13 @@ const Placeholder = ({ title }) => (
 function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
   const toneMap = {
     emerald: {
-      card: "from-emerald-500/15 to-emerald-500/5 border-emerald-400/30 ring-emerald-400/40 text-emerald-100",
+      card:
+        "from-emerald-500/15 to-emerald-500/5 border-emerald-400/30 ring-emerald-400/40 text-emerald-100",
       badge: "bg-emerald-500/90 text-emerald-950",
     },
     sky: {
-      card: "from-sky-500/15 to-sky-500/5 border-sky-400/30 ring-sky-400/40 text-sky-100",
+      card:
+        "from-sky-500/15 to-sky-500/5 border-sky-400/30 ring-sky-400/40 text-sky-100",
       badge: "bg-sky-400/90 text-sky-950",
     },
     red: {
@@ -38,7 +40,8 @@ function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
       badge: "bg-red-500/90 text-red-50",
     },
     amber: {
-      card: "from-amber-500/15 to-amber-500/5 border-amber-400/30 ring-amber-400/40 text-amber-100",
+      card:
+        "from-amber-500/15 to-amber-500/5 border-amber-400/30 ring-amber-400/40 text-amber-100",
       badge: "bg-amber-400/90 text-amber-950",
     },
   }[tone];
@@ -138,11 +141,21 @@ function clamp01(x) {
   return Math.min(1, Math.max(0, x));
 }
 
-function safePctString(n) {
-  const x = Number(n);
-  if (!Number.isFinite(x)) return "0.0%";
-  const clamped = Math.min(100, Math.max(0, x));
-  return `${clamped.toFixed(1)}%`; // show one decimal place ("point value")
+// NEW: precise percent formatter (keeps two decimals, no unwanted rounding to integer)
+function safePctString(n, digits = 2) {
+  if (n == null || n === "") return `${(0).toFixed(digits)}%`;
+  let raw = typeof n === "string" ? n.trim() : n;
+  if (typeof raw === "string" && raw.endsWith("%")) {
+    raw = raw.slice(0, -1);
+  }
+  let x = Number(raw);
+  if (!Number.isFinite(x)) return `${(0).toFixed(digits)}%`;
+  // auto-detect ratios (e.g., 0.6775 -> 67.75)
+  if (x > 0 && x <= 1 && (typeof n !== "string" || !String(n).includes("%"))) {
+    x *= 100;
+  }
+  x = Math.min(100, Math.max(0, x));
+  return `${x.toFixed(digits)}%`;
 }
 
 // parse any defect entry (string like "Broken Stitch (2)" or {label, value}) -> {label, value}
@@ -150,17 +163,12 @@ function parseDefect(d, i) {
   if (typeof d === "string") {
     const m = d.match(/^(.*?)(?:\s*\((\d+)\))?$/);
     const label = (m && m[1] ? m[1] : d).trim() || `Defect ${i + 1}`;
-    let value = m && m[2] ? Number(m[2]) : 0;
+    let value = (m && m[2] ? Number(m[2]) : 0);
     if (!Number.isFinite(value) || value < 0) value = 0;
     return { label, value };
   }
-  const label =
-    d && (d.label || d.name)
-      ? (d.label || d.name).toString()
-      : `Defect ${i + 1}`;
-  let value = Number(
-    d && (d.value != null ? d.value : d.count != null ? d.count : 0)
-  );
+  const label = d && (d.label || d.name) ? (d.label || d.name).toString() : `Defect ${i + 1}`;
+  let value = Number(d && (d.value != null ? d.value : d.count != null ? d.count : 0));
   if (!Number.isFinite(value) || value < 0) value = 0;
   return { label, value };
 }
@@ -197,12 +205,7 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <g transform={`translate(${size / 2} ${size / 2}) rotate(-90)`}>
           {/* base ring */}
-          <circle
-            r={r}
-            fill="none"
-            stroke="rgba(255,255,255,.15)"
-            strokeWidth={thickness}
-          />
+          <circle r={r} fill="none" stroke="rgba(255,255,255,.15)" strokeWidth={thickness} />
 
           {/* slices */}
           {total > 0 &&
@@ -231,39 +234,24 @@ function DefectsPie({ defects, size = 160, thickness = 18 }) {
 
       {/* center total */}
       <div className="pointer-events-none absolute grid place-items-center text-center">
-        <div className="text-[10px] uppercase tracking-wider text-white/60">
-          Total
-        </div>
-        <div className="text-2xl font-extrabold tabular-nums text-white">
-          {total}
-        </div>
+        <div className="text-[10px] uppercase tracking-wider text-white/60">Total</div>
+        <div className="text-2xl font-extrabold tabular-nums text-white">{total}</div>
       </div>
 
       {/* legend */}
       <div className="mt-3 w-full grid grid-cols-3 gap-2 text-[11px]">
-        {(norm.length
-          ? norm
-          : [
-              { label: "—", value: 0 },
-              { label: "—", value: 0 },
-              { label: "—", value: 0 },
-            ]
-        ).map((s, i) => {
-          const pct = total > 0 ? (s.value / total) * 100 : 0;
-          return (
-            <div
-              key={i}
-              className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1"
-            >
-              <span
-                className="h-3 w-3 rounded-sm shrink-0"
-                style={{ backgroundColor: COLORS[i % COLORS.length] }}
-              />
-              <span className="truncate text-white/90">{s.label}</span>
-              <span className="ml-auto text-white/70">{pct.toFixed(1)}%</span>
-            </div>
-          );
-        })}
+        {(norm.length ? norm : [{ label: "—", value: 0 }, { label: "—", value: 0 }, { label: "—", value: 0 }]).map(
+          (s, i) => {
+            const pct = total > 0 ? (s.value / total) * 100 : 0;
+            return (
+              <div key={i} className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1">
+                <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                <span className="truncate text-white/90">{s.label}</span>
+                <span className="ml-auto text-white/70">{pct.toFixed(1)}%</span>
+              </div>
+            );
+          }
+        )}
       </div>
     </div>
   );
@@ -344,34 +332,22 @@ export default function MediaAndKpisTemplate({
     if (isGoogleDriveUrl(imageSrc)) {
       const fileId = extractGoogleDriveId(imageSrc);
       if (!fileId) return "";
-      if (imgAttempt === 0)
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
-      if (imgAttempt === 1)
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
-      if (imgAttempt === 2)
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+      if (imgAttempt === 0) return `https://drive.google.com/uc?export=download&id=${fileId}`;
+      if (imgAttempt === 1) return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      if (imgAttempt === 2) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
     }
     return convertToDirectImageUrl(imageSrc);
   }, [imageSrc, imgAttempt]);
 
-  const videoData = useMemo(
-    () => convertToDirectVideoUrl(videoSrc),
-    [videoSrc]
-  );
+  const videoData = useMemo(() => convertToDirectVideoUrl(videoSrc), [videoSrc]);
 
   // Normalize once for list + pie (true Top 3)
-  const normalizedDefects = useMemo(
-    () => normalizeDefects(defects || [], 3),
-    [defects]
-  );
-  const list =
-    normalizedDefects.length > 0
-      ? normalizedDefects
-      : [
-          { label: "—", value: 0 },
-          { label: "—", value: 0 },
-          { label: "—", value: 0 },
-        ];
+  const normalizedDefects = useMemo(() => normalizeDefects(defects || [], 3), [defects]);
+  const list = normalizedDefects.length > 0 ? normalizedDefects : [
+    { label: "—", value: 0 },
+    { label: "—", value: 0 },
+    { label: "—", value: 0 },
+  ];
 
   // ---- Calculations ----
   // Effective RFT% (Right First Time)
@@ -391,22 +367,13 @@ export default function MediaAndKpisTemplate({
   }, [inspectedUnits, defectiveUnits, defects]);
 
   // Backward compatible fallback: use legacy rejectPct if we couldn't compute
-  const effectiveDefectRatePct =
-    computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
+  const effectiveDefectRatePct = computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
 
   return (
-    <div
-      className={`relative mx-auto w/full max-w-7xl p-2 sm:p-4 text-white ${
-        className || ""
-      }`.replace("/full", "/full")}
-    >
-      {" "}
-      {/* small fix to avoid accidental // in class */}
+    <div className={`relative mx-auto w/full max-w-7xl p-2 sm:p-4 text-white ${className || ""}`.replace("/full", "/full")}>
       {/* Ambient gradient background for the whole widget */}
       <div className="pointer-events-none absolute -inset-4 -z-10 bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(16,185,129,0.15),transparent),radial-gradient(900px_400px_at_100%_0%,rgba(56,189,248,0.15),transparent)]" />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-        {/* LEFT: Media */}
-        {/* //put space for it// */}
         {/* LEFT: Media */}
         <section className="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-2">
           {/* IMAGE */}
@@ -429,24 +396,15 @@ export default function MediaAndKpisTemplate({
               <div className="mx-auto max-w-xs rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-center">
                 <div className="mb-1 inline-flex items-center gap-1 text-amber-300">
                   <TriangleAlert className="h-4 w-4" />
-                  <span className="text-xs font-semibold">
-                    Image Load Failed
-                  </span>
+                  <span className="text-xs font-semibold">Image Load Failed</span>
                 </div>
                 <ul className="mb-2 text-left text-[11px] text-amber-200/90">
                   <li>• Share as "Anyone with the link"</li>
                   <li>• Permission: Viewer</li>
                   <li>• Check File ID</li>
                 </ul>
-                <div className="font-mono text-[10px] text-white/60 break-all">
-                  ID: {extractGoogleDriveId(imageSrc)}
-                </div>
-                <a
-                  href={imageSrc}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-sky-300 hover:underline"
-                >
+                <div className="font-mono text-[10px] text-white/60 break-all">ID: {extractGoogleDriveId(imageSrc)}</div>
+                <a href={imageSrc} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-[11px] text-sky-300 hover:underline">
                   Check in Drive <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
@@ -457,13 +415,8 @@ export default function MediaAndKpisTemplate({
 
           {/* VIDEO */}
           <MediaTile title="Video" icon={PlayCircle}>
-            {videoData &&
-            videoData.candidates &&
-            videoData.candidates.length ? (
-              <VideoPlayer
-                sources={videoData.candidates}
-                iframeFallback={videoData.embedUrl}
-              />
+            {videoData && videoData.candidates && videoData.candidates.length ? (
+              <VideoPlayer sources={videoData.candidates} iframeFallback={videoData.embedUrl} />
             ) : (
               <Placeholder title="Video" />
             )}
@@ -471,19 +424,14 @@ export default function MediaAndKpisTemplate({
         </section>
 
         {/* RIGHT: KPIs */}
-
         <aside className="flex min-h-0 flex-col gap-3">
           <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-2">
                 <Gauge className="h-4 w-4 text-emerald-300" />
-                <h3 className="text-sm uppercase tracking-wider text-white/90">
-                  Top 3 Defects
-                </h3>
+                <h3 className="text-sm uppercase tracking-wider text-white/90">Top 3 Defects</h3>
               </div>
-              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">
-                {new Date().toLocaleTimeString()}
-              </div>
+              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">{new Date().toLocaleTimeString()}</div>
             </div>
 
             {/* List + Pie */}
@@ -497,25 +445,16 @@ export default function MediaAndKpisTemplate({
                       key={i}
                       className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
                     >
-                      {/* colored index box */}
                       <span
                         className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
-                        style={{
-                          backgroundColor: color,
-                          color: "black",
-                        }}
+                        style={{ backgroundColor: color, color: "black" }}
                       >
                         {String(i + 1).padStart(2, "0")}
                       </span>
 
-                      {/* defect name */}
                       <span className="truncate text-white">{d.label}</span>
 
-                      {/* defect count */}
-                      <span
-                        className="ml-auto tabular-nums text-xs"
-                        style={{ color }}
-                      >
+                      <span className="ml-auto tabular-nums text-xs" style={{ color }}>
                         {d.value}
                       </span>
                     </li>
@@ -531,35 +470,18 @@ export default function MediaAndKpisTemplate({
 
           {/* compact KPI rows */}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile
-              label="RFT%"
-              value={safePctString(effectiveRftPct)}
-              tone="sky"
-              icon={CheckCircle2}
-            />
-            <KpiTile
-              label="Defect Rate"
-              value={safePctString(effectiveDefectRatePct)}
-              tone="red"
-              icon={TriangleAlert}
-            />
+            <KpiTile label="RFT%" value={safePctString(effectiveRftPct, 2)} tone="sky" icon={CheckCircle2} />
+            <KpiTile label="Defect Rate" value={safePctString(effectiveDefectRatePct, 2)} tone="red" icon={TriangleAlert} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile
-              label="Overall DHU%"
-              value={safePctString(overallDHUPct)}
-              tone="emerald"
-              icon={TrendingUp}
-            />
+            <KpiTile label="Overall DHU%" value={safePctString(overallDHUPct, 2)} tone="emerald" icon={TrendingUp} />
             <Link href="/HourlyDashboard" className="block">
               <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3 ring-1 ring-white/10 transition-transform duration-200 hover:translate-y-0.5">
                 <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
                   Open
                 </div>
-                <div className="text-sm font-bold text-white/90">
-                  Hourly Inspection Report
-                </div>
+                <div className="text-sm font-bold text-white/90">Hourly Inspection Report</div>
               </div>
             </Link>
           </div>
