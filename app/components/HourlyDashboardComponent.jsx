@@ -22,6 +22,12 @@ export default function HourlyDashboardComponent({
     return `${y}-${m}-${day}`;
   };
 
+  const formatPct = (n) => {
+    const x = Number(n);
+    if (!Number.isFinite(x)) return "0.00%";
+    return `${Math.max(0, Math.min(100, x)).toFixed(2)}%`;
+  };
+
   // Selected date (defaults to today or ?date= from URL if present)
   const initialDate = searchParams?.get("date") || toLocalYMD(new Date());
   const [selectedDate, setSelectedDate] = useState(initialDate);
@@ -72,16 +78,12 @@ export default function HourlyDashboardComponent({
   };
 
   // ✅ Define 12 hourly slots
-  const hours = useMemo(
-    () => Array.from({ length: 12 }, (_, i) => `${getOrdinal(i + 1)} Hour`),
-    []
-  );
+  const hours = useMemo(() => Array.from({ length: 12 }, (_, i) => `${getOrdinal(i + 1)} Hour`), []);
 
   // ✅ Find entry for specific hour
-  const getHourlyByLabel = (label) =>
-    userHourlyData.find((h) => h.hourLabel === label) || {};
+  const getHourlyByLabel = (label) => userHourlyData.find((h) => h.hourLabel === label) || {};
 
-  // ✅ Calculations (kept intact for text shown)
+  // ✅ Calculations (kept intact for per-hour text shown)
   const calculateDefectiveRate = (d) => {
     const { defectivePcs = 0, inspectedQty = 0 } = d || {};
     return inspectedQty ? ((defectivePcs / inspectedQty) * 100).toFixed(2) + "%" : "0%";
@@ -113,12 +115,35 @@ export default function HourlyDashboardComponent({
   const allDefects = useMemo(
     () =>
       Array.from(
-        new Set(
-          userHourlyData.flatMap((h) => (h.selectedDefects || []).map((d) => d.name))
-        )
+        new Set(userHourlyData.flatMap((h) => (h.selectedDefects || []).map((d) => d.name)))
       ),
     [userHourlyData]
   );
+
+  // ✅ Daily totals across all hours for the selected date
+  const dailyTotals = useMemo(() => {
+    return userHourlyData.reduce(
+      (acc, h) => {
+        acc.inspectedQty += Number(h?.inspectedQty || 0);
+        acc.defectivePcs += Number(h?.defectivePcs || 0);
+        acc.totalDefects += Number(h?.totalDefects || 0);
+        return acc;
+      },
+      { inspectedQty: 0, defectivePcs: 0, totalDefects: 0 }
+    );
+  }, [userHourlyData]);
+
+  const overallDefectRate = useMemo(() => {
+    return dailyTotals.inspectedQty > 0
+      ? (dailyTotals.defectivePcs / dailyTotals.inspectedQty) * 100
+      : 0;
+  }, [dailyTotals]);
+
+  const overallDHU = useMemo(() => {
+    return dailyTotals.inspectedQty > 0
+      ? (dailyTotals.totalDefects / dailyTotals.inspectedQty) * 100
+      : 0;
+  }, [dailyTotals]);
 
   const handlePrint = () => {
     setTimeout(() => window.print(), 50);
@@ -193,10 +218,7 @@ export default function HourlyDashboardComponent({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
-        <table
-          className="excel-table tabular-nums w-full min-w-[1200px] border-collapse text-[11px] md:text-sm"
-          aria-label="Hourly Defect Summary"
-        >
+        <table className="excel-table tabular-nums w-full min-w-[1200px] border-collapse text-[11px] md:text-sm" aria-label="Hourly Defect Summary">
           <thead className="sticky top-0 z-20 excel-header">
             <tr className="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-800">
               <th
@@ -206,11 +228,7 @@ export default function HourlyDashboardComponent({
                 Defect Name/Code
               </th>
               {hours.map((hr, i) => (
-                <th
-                  key={i}
-                  className="border border-gray-200 px-3 py-2 text-center font-semibold"
-                  scope="col"
-                >
+                <th key={i} className="border border-gray-200 px-3 py-2 text-center font-semibold" scope="col">
                   {hr}
                 </th>
               ))}
@@ -220,22 +238,15 @@ export default function HourlyDashboardComponent({
           <tbody className="divide-y divide-gray-100">
             {allDefects.length > 0 ? (
               allDefects.map((defectName, idx) => (
-                <tr
-                  key={idx}
-                  className="odd:bg-white even:bg-gray-50 hover:bg-slate-50 transition-colors"
-                >
+                <tr key={idx} className="odd:bg-white even:bg-gray-50 hover:bg-slate-50 transition-colors">
                   <td className="sticky left-0 z-10 border border-gray-200 px-3 py-2 bg-white font-medium text-slate-700 shadow-[4px_0_0_0_rgba(0,0,0,0.03)]">
                     {defectName}
                   </td>
                   {hours.map((hr, i) => {
                     const hourEntry = getHourlyByLabel(hr);
-                    const defect =
-                      hourEntry.selectedDefects?.find((d) => d.name === defectName);
+                    const defect = hourEntry.selectedDefects?.find((d) => d.name === defectName);
                     return (
-                      <td
-                        key={i}
-                        className="border border-gray-200 px-3 py-2 text-center text-slate-700"
-                      >
+                      <td key={i} className="border border-gray-200 px-3 py-2 text-center text-slate-700">
                         {defect?.quantity ?? 0}
                       </td>
                     );
@@ -244,10 +255,7 @@ export default function HourlyDashboardComponent({
               ))
             ) : (
               <tr>
-                <td
-                  colSpan={hours.length + 1}
-                  className="text-center text-gray-500 py-6 border border-gray-200 bg-white"
-                >
+                <td colSpan={hours.length + 1} className="text-center text-gray-500 py-6 border border-gray-200 bg-white">
                   No defect data found for the selected date.
                 </td>
               </tr>
@@ -259,10 +267,7 @@ export default function HourlyDashboardComponent({
                 Total Defects
               </td>
               {hours.map((hr, i) => (
-                <td
-                  key={i}
-                  className="border border-gray-200 px-3 py-2 text-center text-slate-700"
-                >
+                <td key={i} className="border border-gray-200 px-3 py-2 text-center text-slate-700">
                   {getHourlyByLabel(hr)?.totalDefects ?? 0}
                 </td>
               ))}
@@ -324,15 +329,8 @@ export default function HourlyDashboardComponent({
               {hours.map((hr, i) => {
                 const info = getRateNumbers(getHourlyByLabel(hr));
                 return (
-                  <td
-                    key={i}
-                    className="border border-gray-200 px-3 py-2 text-center font-bold"
-                  >
-                    <span
-                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(
-                        info.defectiveRate
-                      )}`}
-                    >
+                  <td key={i} className="border border-gray-200 px-3 py-2 text-center font-bold">
+                    <span className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(info.defectiveRate)}`}>
                       {calculateDefectiveRate(getHourlyByLabel(hr))}
                     </span>
                   </td>
@@ -348,15 +346,8 @@ export default function HourlyDashboardComponent({
               {hours.map((hr, i) => {
                 const info = getRateNumbers(getHourlyByLabel(hr));
                 return (
-                  <td
-                    key={i}
-                    className="border border-gray-200 px-3 py-2 text-center font-bold"
-                  >
-                    <span
-                      className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(
-                        info.dhu
-                      )}`}
-                    >
+                  <td key={i} className="border border-gray-200 px-3 py-2 text-center font-bold">
+                    <span className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs md:text-sm ${rateBadgeClass(info.dhu)}`}>
                       {calculateDHU(getHourlyByLabel(hr))}
                     </span>
                   </td>
@@ -364,6 +355,31 @@ export default function HourlyDashboardComponent({
               })}
             </tr>
           </tbody>
+
+          {/* 🔢 Overall summary for the selected day */}
+          <tfoot>
+            <tr>
+              <td colSpan={hours.length + 1} className="bg-slate-100/80 px-3 py-3 text-right">
+                <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end md:items-center md:gap-6">
+                  <span className="text-sm text-slate-700">
+                    Total Inspected: <strong>{dailyTotals.inspectedQty}</strong>
+                  </span>
+                  <span className="text-sm text-slate-700">
+                    Total Defective Pcs: <strong>{dailyTotals.defectivePcs}</strong>
+                  </span>
+                  <span className="text-sm text-slate-700">
+                    Total Defects: <strong>{dailyTotals.totalDefects}</strong>
+                  </span>
+                  <span className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-xs md:text-sm ${rateBadgeClass(overallDefectRate)}`}>
+                    Total Defect Rate: <strong className="ml-1">{formatPct(overallDefectRate)}</strong>
+                  </span>
+                  <span className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-xs md:text-sm ${rateBadgeClass(overallDHU)}`}>
+                    Total DHU%: <strong className="ml-1">{formatPct(overallDHU)}</strong>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
