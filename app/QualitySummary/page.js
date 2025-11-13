@@ -40,6 +40,9 @@ function serializeRegister(docs) {
     style: doc.style || "",
     item: doc.item || "",
     color: doc.color || "",
+    // 🔹 ADD THESE TWO FIELDS:
+    smv: doc.smv || "",
+    runDay: doc.runDay || "",
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
   }));

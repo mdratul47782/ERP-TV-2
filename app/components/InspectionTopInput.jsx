@@ -51,13 +51,16 @@ export default function InspectionTopInput({
   }, [auth, registerData]);
 
   const fields = [
-    { label: "Building", value: userRegister?.building, tone: "sky" },
+    // { label: "Building", value: userRegister?.building, tone: "sky" },
     { label: "Floor", value: userRegister?.floor, tone: "emerald" },
     { label: "Line", value: userRegister?.line, tone: "violet" },
     { label: "Buyer", value: userRegister?.buyer, tone: "amber" },
     { label: "Style", value: userRegister?.style, tone: "rose" },
     { label: "Style/Item", value: userRegister?.item, tone: "cyan" },
     { label: "Color/Model", value: userRegister?.color, tone: "fuchsia" },
+    // 🔹 New chips
+    { label: "SMV", value: userRegister?.smv, tone: "sky" },
+    { label: "Run Day", value: userRegister?.runDay, tone: "emerald" },
   ];
 
   const isLight = theme === "light";
@@ -81,7 +84,7 @@ export default function InspectionTopInput({
             <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(120px_60px_at_0%_0%,rgba(255,255,255,0.12),transparent)] " />
           )}
 
-          <div className="relative ">
+          <div className="relative">
             {/* Chips */}
             <div className="py-0">
               <ul
