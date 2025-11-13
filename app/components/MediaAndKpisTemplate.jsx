@@ -81,58 +81,6 @@ function MediaTile({ title, icon: Icon, children }) {
   );
 }
 
-/* ---------------- Google Drive helpers ---------------- */
-function extractGoogleDriveId(url) {
-  if (!url) return null;
-  try {
-    const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (match1) return match1[1];
-    const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (match2) return match2[1];
-    const match3 = url.match(/uc\?.*id=([a-zA-Z0-9_-]+)/);
-    if (match3) return match3[1];
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function isGoogleDriveUrl(url) {
-  if (!url) return false;
-  return url.includes("drive.google.com");
-}
-
-function convertToDirectImageUrl(url) {
-  if (!url) return "";
-  if (isGoogleDriveUrl(url)) {
-    const fileId = extractGoogleDriveId(url);
-    if (fileId)
-      return `https://drive.google.com/uc?export=download&id=${fileId}`;
-  }
-  return url;
-}
-
-// return multiple candidate URLs for video so we can retry and ensure autoplay/loop
-function convertToDirectVideoUrl(url) {
-  if (!url) return { isDrive: false, candidates: [] };
-  if (isGoogleDriveUrl(url)) {
-    const fileId = extractGoogleDriveId(url);
-    if (fileId) {
-      const candidates = [
-        `https://drive.google.com/uc?export=download&id=${fileId}`,
-        `https://drive.google.com/uc?export=preview&id=${fileId}`,
-        `https://drive.google.com/uc?export=view&id=${fileId}`,
-      ];
-      return {
-        isDrive: true,
-        candidates,
-        embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
-      };
-    }
-  }
-  return { isDrive: false, candidates: [url] };
-}
-
 /* ---------------- Percent + defect helpers ---------------- */
 function clamp01(x) {
   return Math.min(1, Math.max(0, x));
@@ -261,14 +209,16 @@ function DefectsPie({ defects, size = 150, thickness = 16 }) {
           return (
             <div
               key={i}
-              className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1"
+              className="flex items-center gap-2 min-w-0 rounded-md border border-white/10 bg-white/[0.04] px-1 py-1 w-12"
             >
               <span
-                className="h-3 w-3 rounded-sm shrink-0"
+                className="h-3 w-3 rounded-sm shrink-0 "
                 style={{ backgroundColor: COLORS[i % COLORS.length] }}
               />
               <span className="truncate text-white/90">{s.label}</span>
-              <span className="ml-auto text-white/70">{pct.toFixed(1)}%</span>
+              <span className="ml-auto mr-11 text-white/70">
+                {pct.toFixed(0)}%
+              </span>
             </div>
           );
         })}
@@ -358,7 +308,6 @@ export default function MediaAndKpisTemplate({
   className,
 }) {
   const [imgError, setImgError] = useState(false);
-  const [imgAttempt, setImgAttempt] = useState(0);
 
   // NEW (JS only): refs + state for red-circle annotations
   const imgRef = useRef(null);
@@ -366,22 +315,11 @@ export default function MediaAndKpisTemplate({
   const imageWrapRef = useRef(null);
   const [overlaySize, setOverlaySize] = useState({ w: 0, h: 0 });
   const [circles, setCircles] = useState([]); // {cx, cy, r}
-  const [drag, setDrag] = useState(null); // {startX, startY, cx, cy, r}
+  const [drag, setDrag] = useState(null);
+  // null | { mode: "draw", startX, startY, cx, cy, r }
+  //      | { mode: "move", index, offsetX, offsetY }
 
-  const finalImageSrc = useMemo(() => {
-    if (!imageSrc) return "";
-    if (isGoogleDriveUrl(imageSrc)) {
-      const fileId = extractGoogleDriveId(imageSrc);
-      if (!fileId) return "";
-      if (imgAttempt === 0)
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
-      if (imgAttempt === 1)
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
-      if (imgAttempt === 2)
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
-    }
-    return convertToDirectImageUrl(imageSrc);
-  }, [imageSrc, imgAttempt]);
+  const finalImageSrc = useMemo(() => imageSrc || "", [imageSrc]);
 
   // measure overlay size so SVG coords === CSS pixels
   useLayoutEffect(() => {
@@ -404,10 +342,14 @@ export default function MediaAndKpisTemplate({
   useEffect(() => {
     setCircles([]);
     setDrag(null);
+    setImgError(false);
   }, [finalImageSrc]);
 
+  // Video: no Google Drive – just use the given URL
   const videoData = useMemo(
-    () => convertToDirectVideoUrl(videoSrc),
+    () => ({
+      candidates: videoSrc ? [videoSrc] : [],
+    }),
     [videoSrc]
   );
 
@@ -469,17 +411,49 @@ export default function MediaAndKpisTemplate({
     const { rect, disp } = m;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    if (
-      x < disp.x ||
-      x > disp.x + disp.width ||
-      y < disp.y ||
-      y > disp.y + disp.height
-    )
-      return;
 
-    const { cx, cy } = clampToDisp(x, y, disp);
-    const d = { startX: cx, startY: cy, cx, cy, r: 0 };
-    setDrag(d);
+    // --- 1) Try to grab an existing circle to MOVE it ---
+    let hitIndex = -1;
+    const hitRadiusPadding = 8; // pixels tolerance around edge/inside
+    for (let i = circles.length - 1; i >= 0; i -= 1) {
+      const c = circles[i];
+      const dist = Math.hypot(x - c.cx, y - c.cy);
+      if (dist <= c.r + hitRadiusPadding) {
+        hitIndex = i;
+        break;
+      }
+    }
+
+    if (hitIndex !== -1) {
+      const c = circles[hitIndex];
+      setDrag({
+        mode: "move",
+        index: hitIndex,
+        offsetX: x - c.cx,
+        offsetY: y - c.cy,
+      });
+    } else {
+      // --- 2) Otherwise, start DRAWING a new circle (only inside image) ---
+      if (
+        x < disp.x ||
+        x > disp.x + disp.width ||
+        y < disp.y ||
+        y > disp.y + disp.height
+      ) {
+        return;
+      }
+
+      const { cx, cy } = clampToDisp(x, y, disp);
+      setDrag({
+        mode: "draw",
+        startX: cx,
+        startY: cy,
+        cx,
+        cy,
+        r: 0,
+      });
+    }
+
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
@@ -493,25 +467,45 @@ export default function MediaAndKpisTemplate({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const { cx, cy } = clampToDisp(drag.startX, drag.startY, disp);
-    const dx = x - cx;
-    const dy = y - cy;
-    const dist = Math.hypot(dx, dy);
-    const maxR = Math.min(
-      cx - disp.x,
-      disp.x + disp.width - cx,
-      cy - disp.y,
-      disp.y + disp.height - cy
-    );
-    const r = Math.max(2, Math.min(dist, maxR));
-    setDrag({ ...drag, cx, cy, r });
+    if (drag.mode === "draw") {
+      // same logic as before, but now under 'draw' mode
+      const { cx, cy } = clampToDisp(drag.startX, drag.startY, disp);
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.hypot(dx, dy);
+      const maxR = Math.min(
+        cx - disp.x,
+        disp.x + disp.width - cx,
+        cy - disp.y,
+        disp.y + disp.height - cy
+      );
+      const r = Math.max(2, Math.min(dist, maxR));
+      setDrag({ ...drag, cx, cy, r });
+    } else if (drag.mode === "move") {
+      // move existing circle
+      const targetX = x - drag.offsetX;
+      const targetY = y - drag.offsetY;
+      const { cx, cy } = clampToDisp(targetX, targetY, disp);
+
+      setCircles((prev) =>
+        prev.map((c, i) => (i === drag.index ? { ...c, cx, cy } : c))
+      );
+    }
   }
 
   function onPointerUp(e) {
     if (!drag) return;
-    if (drag.r >= 2) {
-      setCircles((prev) => [...prev, { cx: drag.cx, cy: drag.cy, r: drag.r }]);
+
+    if (drag.mode === "draw") {
+      if (drag.r >= 2) {
+        setCircles((prev) => [
+          ...prev,
+          { cx: drag.cx, cy: drag.cy, r: drag.r },
+        ]);
+      }
     }
+    // if mode === "move", we’ve already updated circle position in onPointerMove
+
     setDrag(null);
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
@@ -540,14 +534,7 @@ export default function MediaAndKpisTemplate({
                   src={finalImageSrc}
                   alt="Quality Image"
                   className="h-full w-full object-contain select-none"
-                  onError={() => {
-                    if (imgAttempt < 2) {
-                      setImgAttempt(imgAttempt + 1);
-                      setImgError(false);
-                    } else {
-                      setImgError(true);
-                    }
-                  }}
+                  onError={() => setImgError(true)}
                   draggable={false}
                 />
                 {/* Transparent SVG overlay for dark red circles */}
@@ -573,7 +560,7 @@ export default function MediaAndKpisTemplate({
                       strokeWidth="3"
                     />
                   ))}
-                  {drag && drag.r > 0 ? (
+                  {drag && drag.mode === "draw" && drag.r > 0 ? (
                     <circle
                       cx={drag.cx}
                       cy={drag.cy}
@@ -616,13 +603,11 @@ export default function MediaAndKpisTemplate({
                     Image Load Failed
                   </span>
                 </div>
-                <ul className="mb-2 text-left text-[11px] text-amber-200/90">
-                  <li>• Share as "Anyone with the link"</li>
-                  <li>• Permission: Viewer</li>
-                  <li>• Check File ID</li>
-                </ul>
+                <div className="mb-2 text-[11px] text-amber-200/90">
+                  Please check the image URL and try again.
+                </div>
                 <div className="font-mono text-[10px] text-white/60 break-all">
-                  ID: {extractGoogleDriveId(imageSrc)}
+                  {imageSrc}
                 </div>
                 <a
                   href={imageSrc}
@@ -630,7 +615,7 @@ export default function MediaAndKpisTemplate({
                   rel="noopener noreferrer"
                   className="mt-2 inline-flex items-center gap-1 text-[11px] text-sky-300 hover:underline"
                 >
-                  Check in Drive <ExternalLink className="h-3 w-3" />
+                  Open image <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             ) : (
@@ -645,7 +630,7 @@ export default function MediaAndKpisTemplate({
             videoData.candidates.length ? (
               <VideoPlayer
                 sources={videoData.candidates}
-                iframeFallback={videoData.embedUrl}
+                iframeFallback={undefined}
               />
             ) : (
               <Placeholder title="Video" />
@@ -655,13 +640,30 @@ export default function MediaAndKpisTemplate({
 
         {/* RIGHT: KPIs */}
         <aside className="flex min-h-0 flex-col gap-2.5 sm:gap-3">
+          {/* Defects card */}
           <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
+            {/* subtle patterned backdrop */}
+            <div className="pointer-events-none absolute inset-0 -z-10 opacity-60">
+              <div className="absolute inset-0 bg-[radial-gradient(900px_300px_at_80%_-10%,rgba(16,185,129,0.10),transparent),radial-gradient(600px_220px_at_0%_100%,rgba(56,189,248,0.08),transparent)]" />
+            </div>
+
+            {/* header */}
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-2">
-                <Gauge className="h-4 w-4 text-emerald-300" />
-                <h3 className="text-xs sm:text-sm uppercase tracking-wider text-white/90">
-                  Top 3 Defects
-                </h3>
+                <div className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-400/10 ring-1 ring-emerald-400/30">
+                  <Gauge className="h-4 w-4 text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm uppercase tracking-wider text-white/90">
+                    Top 3 Defects
+                  </h3>
+                  <div className="text-[10px] text-white/60">
+                    Most frequent:{" "}
+                    <span className="text-white/80">
+                      {list?.[0]?.label ?? "—"}
+                    </span>
+                  </div>
+                </div>
               </div>
               <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">
                 {new Date().toLocaleTimeString()}
@@ -674,25 +676,47 @@ export default function MediaAndKpisTemplate({
                 {list.map((d, i) => {
                   const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
                   const color = COLORS[i % COLORS.length];
+                  const top = list?.[0]?.value || 1;
+                  const rel = Math.max(
+                    0,
+                    Math.min(100, top ? (d.value / top) * 100 : 0)
+                  );
+                  const total = list.reduce((a, b) => a + (b?.value || 0), 0);
+                  const pct = total
+                    ? ((d.value / total) * 100).toFixed(1)
+                    : "0.0";
+
                   return (
                     <li
                       key={i}
-                      className="flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-2 py-1.5 sm:py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
+                      className="relative flex items-center gap-2 overflow-hidden rounded-md border border-white/20 bg-white/10 px-2 py-1.5 sm:py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
                     >
+                      {/* bar background (relative to top defect) */}
+                      <div
+                        className="absolute inset-y-0 left-0 w-0 bg-white/10"
+                        style={{ width: `${rel}%` }}
+                      />
                       <span
-                        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
+                        className="relative z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
                         style={{ backgroundColor: color, color: "black" }}
                       >
                         {String(i + 1).padStart(2, "0")}
                       </span>
 
-                      <span className="truncate text-white">{d.label}</span>
+                      <span className="relative z-10 truncate text-white">
+                        {d.label}
+                      </span>
 
-                      <span
-                        className="ml-auto tabular-nums text-xs"
-                        style={{ color }}
-                      >
-                        {d.value}
+                      <span className="relative z-10 ml-auto flex items-center gap-2">
+                        <span className="tabular-nums text-[11px] text-white/65">
+                          {pct}%
+                        </span>
+                        <span
+                          className="tabular-nums text-xs"
+                          style={{ color }}
+                        >
+                          {d.value}
+                        </span>
                       </span>
                     </li>
                   );
@@ -700,7 +724,9 @@ export default function MediaAndKpisTemplate({
               </ol>
 
               <div className="grid place-items-center">
-                <DefectsPie defects={list} size={150} thickness={16} />
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2">
+                  <DefectsPie defects={list} size={150} thickness={16} />
+                </div>
               </div>
             </div>
           </div>
@@ -721,6 +747,7 @@ export default function MediaAndKpisTemplate({
             />
           </div>
 
+          {/* bottom row with DHU + link card */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
             <KpiTile
               label="Overall DHU%"
@@ -730,6 +757,10 @@ export default function MediaAndKpisTemplate({
             />
             <Link href="/HourlyDashboard" className="block">
               <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3 ring-1 ring-white/10 transition-transform duration-200 hover:translate-y-0.5 min-h-[84px]">
+                {/* subtle glow sweep on hover */}
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                  <div className="absolute -inset-16 animate-pulse rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,rgba(255,255,255,0.18),transparent_60%)]" />
+                </div>
                 <div className="mb-1 inline-flex items-center gap-1 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900">
                   Open
                 </div>

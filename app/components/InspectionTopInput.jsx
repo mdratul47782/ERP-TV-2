@@ -3,11 +3,42 @@
 import { useAuth } from "../hooks/useAuth";
 import { useMemo } from "react";
 
+// Outer card tones (KpiTile-style)
+const toneCardMap = {
+  emerald:
+    "from-emerald-500/15 to-emerald-500/5 border-emerald-400/30 ring-emerald-400/40 text-emerald-100",
+  sky:
+    "from-sky-500/15 to-sky-500/5 border-sky-400/30 ring-sky-400/40 text-sky-100",
+  red:
+    "from-red-500/15 to-red-500/5 border-red-400/30 ring-red-400/40 text-red-100",
+  amber:
+    "from-amber-500/15 to-amber-500/5 border-amber-400/30 ring-amber-400/40 text-amber-100",
+};
+
+// Chip tones (no text color here, text handled separately)
+const chipToneMap = {
+  sky: "from-sky-500/20 to-sky-500/5 border-sky-400/40 ring-sky-400/40",
+  emerald:
+    "from-emerald-500/20 to-emerald-500/5 border-emerald-400/40 ring-emerald-400/40",
+  violet:
+    "from-violet-500/20 to-violet-500/5 border-violet-400/40 ring-violet-400/40",
+  amber:
+    "from-amber-500/20 to-amber-500/5 border-amber-400/40 ring-amber-400/40",
+  rose:
+    "from-rose-500/20 to-rose-500/5 border-rose-400/40 ring-rose-400/40",
+  cyan: "from-cyan-500/20 to-cyan-500/5 border-cyan-400/40 ring-cyan-400/40",
+  fuchsia:
+    "from-fuchsia-500/20 to-fuchsia-500/5 border-fuchsia-400/40 ring-fuchsia-400/40",
+  default:
+    "from-slate-500/20 to-slate-900/60 border-slate-400/40 ring-slate-400/40",
+};
+
 export default function InspectionTopInput({
   className = "",
   id,
   registerData = [],
-  theme = "dark", // "dark" (glassy) | "light" (white card)
+  theme = "dark", // "dark" (glassy gradient) | "light" (white card)
+  tone = "sky", // default outer card = sky (blue)
 }) {
   const { auth } = useAuth();
 
@@ -20,83 +51,86 @@ export default function InspectionTopInput({
   }, [auth, registerData]);
 
   const fields = [
-    { label: "Building", value: userRegister?.building },
-    { label: "Floor", value: userRegister?.floor },
-    { label: "Line", value: userRegister?.line },
-    { label: "Buyer", value: userRegister?.buyer },
-    { label: "Style", value: userRegister?.style },
-    { label: "Style/Item", value: userRegister?.item },
-    { label: "Color/Model", value: userRegister?.color },
+    { label: "Building", value: userRegister?.building, tone: "sky" },
+    { label: "Floor", value: userRegister?.floor, tone: "emerald" },
+    { label: "Line", value: userRegister?.line, tone: "violet" },
+    { label: "Buyer", value: userRegister?.buyer, tone: "amber" },
+    { label: "Style", value: userRegister?.style, tone: "rose" },
+    { label: "Style/Item", value: userRegister?.item, tone: "cyan" },
+    { label: "Color/Model", value: userRegister?.color, tone: "fuchsia" },
   ];
 
   const isLight = theme === "light";
+  const toneClasses = toneCardMap[tone] || toneCardMap.sky;
 
   return (
-    <header className={`w-full z-20 ${className}`}>
+    <header id={id} className={`w-full z-20 ${className}`}>
       <div className="mx-auto max-w-screen-3xl">
         {/* Container switches by theme */}
         <div
           className={
             isLight
-              ? "relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
-              : "relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
+              ? // LIGHT: white card
+                "relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+              : // DARK: gradient KpiTile-style card
+                `group relative overflow-hidden rounded-2xl border bg-gradient-to-br p-3 ring-1 transition-transform duration-200 hover:translate-y-0.5 ${toneClasses}`
           }
         >
-          {/* <div className="mb- flex items-center justify-between gap-2">
-            <h3
-              className={
-                isLight
-                  ? "text-sm font-bold uppercase tracking-wider text-slate-900"
-                  : "text-sm font-bold uppercase tracking-wider text-white/90"
-              }
-            >
-              
-            </h3>
-            <div
-              className={
-                isLight
-                  ? "rounded-md bg-gray-100 px-2 py-0.5 text-[10px] text-slate-700"
-                  : "rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70"
-              }
-            >
-              {new Date().toLocaleTimeString()}
-            </div>
-          </div> */}
+          {/* subtle corner glow (same as KpiTile) */}
+          {!isLight && (
+            <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(120px_60px_at_0%_0%,rgba(255,255,255,0.12),transparent)]" />
+          )}
 
-          {/* Chips */}
-          <div className="py-2">
-            <ul className="flex flex-wrap items-center justify-center gap-2 lg:gap-3 px-2">
-              {fields.map((f) => (
-                <li
-                  key={f.label}
-                  className={
-                    isLight
-                      ? "flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm text-center"
-                      : "flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 shadow-sm text-center"
-                  }
-                  title={f.value || ""}
-                >
-                  <span
-                    className={
-                      isLight
-                        ? "text-[11px] sm:text-xs lg:text-sm text-slate-600 font-semibold tracking-wider"
-                        : "text-[11px] sm:text-xs lg:text-sm text-white/70 font-semibold tracking-wider"
-                    }
-                  >
-                    {f.label}:
-                  </span>
-                  <span
-                    className={
-                      isLight
-                        ? "text-sm sm:text-base lg:text-lg font-semibold text-slate-900 max-w-[12rem] sm:max-w-[16rem] lg:max-w-[22rem] truncate"
-                        : "text-sm sm:text-base lg:text-lg font-semibold text-white/90 max-w-[12rem] sm:max-w-[16rem] lg:max-w-[22rem] truncate"
-                    }
-                  >
-                    {f.value || "—"}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <div className="relative">
+            {/* Chips */}
+            <div className="py-2">
+              <ul className="flex flex-wrap items-center justify-center gap-2 lg:gap-3 px-2">
+                {fields.map((f) => {
+                  const chipToneClass =
+                    chipToneMap[f.tone] || chipToneMap.default;
+
+                  return (
+                    <li
+                      key={f.label}
+                      className={
+                        isLight
+                          ? // LIGHT chip: simple white
+                            "relative overflow-hidden rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm text-center"
+                          : // DARK chip: colorful gradient
+                            `relative overflow-hidden rounded-lg border bg-gradient-to-br px-3 py-1.5 shadow-sm text-center ring-1 ${chipToneClass}`
+                      }
+                      title={f.value || ""}
+                    >
+                      {/* subtle glow inside each chip (dark only) */}
+                      {!isLight && (
+                        <div className="pointer-events-none absolute -inset-px rounded-[0.9rem] bg-[radial-gradient(80px_40px_at_0%_0%,rgba(255,255,255,0.14),transparent)]" />
+                      )}
+
+                      <div className="relative flex items-center gap-2">
+                        <span
+                          className={
+                            isLight
+                              ? "text-[11px] sm:text-xs lg:text-sm text-slate-600 font-semibold tracking-wider"
+                              : "text-[11px] sm:text-xs lg:text-sm text-white/80 font-semibold tracking-wider"
+                          }
+                        >
+                          {f.label}:
+                        </span>
+                        <span
+                          className={
+                            isLight
+                              ? "text-sm sm:text-base lg:text-lg font-semibold text-slate-900 max-w-[12rem] sm:max-w-[16rem] lg:max-w-[22rem] truncate"
+                              : "text-sm sm:text-base lg:text-lg font-semibold text-white max-w-[12rem] sm:max-w-[16rem] lg:max-w-[22rem] truncate"
+                          }
+                        >
+                          {f.value || "—"}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -120,7 +154,11 @@ export default function InspectionTopInput({
                 : "mt-1 text-center text-[12px] sm:text-sm text-yellow-200"
             }
           >
-            No registered line info found for <b className={isLight ? "text-slate-900" : "text-white/90"}>{auth?.user_name}</b>.
+            No registered line info found for{" "}
+            <b className={isLight ? "text-slate-900" : "text-white/90"}>
+              {auth?.user_name}
+            </b>
+            .
           </p>
         )}
       </div>
