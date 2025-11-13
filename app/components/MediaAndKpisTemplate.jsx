@@ -1,5 +1,12 @@
 "use client";
-import { useMemo, useState, useRef, useEffect, useLayoutEffect } from "react";
+
+import {
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+} from "react";
 import Link from "next/link";
 import {
   Image as ImageIcon,
@@ -12,6 +19,31 @@ import {
 } from "lucide-react";
 
 /* -------------------------- Shared helpers & UI -------------------------- */
+
+// Shared tone map for KPI + Media tiles
+const TONE_MAP = {
+  emerald: {
+    card:
+      "from-emerald-500/15 to-emerald-500/5 border-emerald-400/30 ring-emerald-400/40 text-emerald-100",
+    badge: "bg-emerald-500/90 text-emerald-950",
+  },
+  sky: {
+    card:
+      "from-sky-500/15 to-sky-500/5 border-sky-400/30 ring-sky-400/40 text-sky-100",
+    badge: "bg-sky-400/90 text-sky-950",
+  },
+  red: {
+    card:
+      "from-red-500/15 to-red-500/5 border-red-400/30 ring-red-400/40 text-red-100",
+    badge: "bg-red-500/90 text-red-50",
+  },
+  amber: {
+    card:
+      "from-amber-500/15 to-amber-500/5 border-amber-400/30 ring-amber-400/40 text-amber-100",
+    badge: "bg-amber-400/90 text-amber-950",
+  },
+};
+const defectsTone = TONE_MAP.emerald;
 const Placeholder = ({ title }) => (
   <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center">
     <div className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wider text-white/80">
@@ -24,24 +56,7 @@ const Placeholder = ({ title }) => (
 );
 
 function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
-  const toneMap = {
-    emerald: {
-      card: "from-emerald-500/15 to-emerald-500/5 border-emerald-400/30 ring-emerald-400/40 text-emerald-100",
-      badge: "bg-emerald-500/90 text-emerald-950",
-    },
-    sky: {
-      card: "from-sky-500/15 to-sky-500/5 border-sky-400/30 ring-sky-400/40 text-sky-100",
-      badge: "bg-sky-400/90 text-sky-950",
-    },
-    red: {
-      card: "from-red-500/15 to-red-500/5 border-red-400/30 ring-red-400/40 text-red-100",
-      badge: "bg-red-500/90 text-red-50",
-    },
-    amber: {
-      card: "from-amber-500/15 to-amber-500/5 border-amber-400/30 ring-amber-400/40 text-amber-100",
-      badge: "bg-amber-400/90 text-amber-950",
-    },
-  }[tone];
+  const toneMap = TONE_MAP[tone] || TONE_MAP.emerald;
 
   return (
     <div
@@ -67,15 +82,30 @@ function KpiTile({ label, value, tone = "emerald", icon: Icon }) {
   );
 }
 
-function MediaTile({ title, icon: Icon, children }) {
+// UPDATED: Media tile now uses same gradient / ring style as KPI tiles
+function MediaTile({ title, icon: Icon, children, tone = "emerald" }) {
+  const toneMap = TONE_MAP[tone] || TONE_MAP.emerald;
+
   return (
-    <div className="group relative h-full rounded-2xl border border-white/10 bg-white/[0.04] p-2 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-colors">
-      <div className="absolute -top-2 left-2 inline-flex items-center gap-1 rounded-md bg-emerald-400/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-950">
-        {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
-        {title}
-      </div>
-      <div className="relative grid h-full place-items-center overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-900/30 min-h-[180px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[300px]">
-        {children}
+    <div
+      className={`group relative h-full overflow-hidden rounded-2xl border ${toneMap.card} bg-gradient-to-br p-2.5 sm:p-3 ring-1 shadow-sm transition-transform duration-200 hover:translate-y-0.5`}
+    >
+      {/* subtle corner glow, same feel as KPI */}
+      <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(140px_70px_at_0%_0%,rgba(255,255,255,0.18),transparent)]" />
+
+      <div className="relative flex h-full flex-col gap-1">
+        {/* header chip */}
+        <div
+          className={`inline-flex items-center gap-1 self-start rounded-md px-2 py-0.3 text-[10px] font-semibold uppercase tracking-wider ${toneMap.badge}`}
+        >
+          {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+          {title}
+        </div>
+
+        {/* content area */}
+        <div className="relative flex-1 grid place-items-center overflow-hidden rounded-xl border border-white/15 bg-gradient-to-br from-slate-900/80 to-slate-900/30 min-h-[170px] sm:min-h-[220px] md:min-h-[260px] lg:min-h-[300px]">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -188,10 +218,10 @@ function DefectsPie({ defects, size = 150, thickness = 16 }) {
       {/* center total */}
       <div className="pointer-events-none absolute grid place-items-center text-center">
         <div className="text-[12px] uppercase tracking-wider text-white/60">
-          <div>Top 3 Defect's</div>
-           Total
+          <div>Top Defect&apos;s</div>
+          
         </div>
-        <div className="text-2xl font-extrabold tabular-nums text-white">
+        <div className="text-4xl font-extrabold tabular-nums text-white">
           {total}
         </div>
       </div>
@@ -279,7 +309,7 @@ function VideoPlayer({ sources, iframeFallback }) {
   );
 }
 
-/* ------------ helpers for image overlay circle drawing (no style changes) ----------- */
+/* ------------ helpers for image overlay circle drawing ----------- */
 function containRect(containerW, containerH, naturalW, naturalH) {
   if (!containerW || !containerH || !naturalW || !naturalH) {
     return { x: 0, y: 0, width: containerW || 0, height: containerH || 0 };
@@ -310,7 +340,7 @@ export default function MediaAndKpisTemplate({
 }) {
   const [imgError, setImgError] = useState(false);
 
-  // NEW (JS only): refs + state for red-circle annotations
+  // refs + state for red-circle annotations
   const imgRef = useRef(null);
   const overlayRef = useRef(null);
   const imageWrapRef = useRef(null);
@@ -386,7 +416,7 @@ export default function MediaAndKpisTemplate({
   const effectiveDefectRatePct =
     computedDefectRate == null ? Number(rejectPct) : computedDefectRate;
 
-  // --- pointer handlers for drawing a dark red circle over the image area ---
+  // --- pointer handlers for drawing / moving circles over the image area ---
   function getOverlayMetrics() {
     const svg = overlayRef.current;
     const img = imgRef.current;
@@ -413,9 +443,9 @@ export default function MediaAndKpisTemplate({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // --- 1) Try to grab an existing circle to MOVE it ---
+    // 1) Try to grab an existing circle to MOVE it
     let hitIndex = -1;
-    const hitRadiusPadding = 8; // pixels tolerance around edge/inside
+    const hitRadiusPadding = 8; // pixels tolerance
     for (let i = circles.length - 1; i >= 0; i -= 1) {
       const c = circles[i];
       const dist = Math.hypot(x - c.cx, y - c.cy);
@@ -434,7 +464,7 @@ export default function MediaAndKpisTemplate({
         offsetY: y - c.cy,
       });
     } else {
-      // --- 2) Otherwise, start DRAWING a new circle (only inside image) ---
+      // 2) Otherwise, start DRAWING a new circle (only inside image)
       if (
         x < disp.x ||
         x > disp.x + disp.width ||
@@ -469,7 +499,6 @@ export default function MediaAndKpisTemplate({
     const y = e.clientY - rect.top;
 
     if (drag.mode === "draw") {
-      // same logic as before, but now under 'draw' mode
       const { cx, cy } = clampToDisp(drag.startX, drag.startY, disp);
       const dx = x - cx;
       const dy = y - cy;
@@ -483,11 +512,9 @@ export default function MediaAndKpisTemplate({
       const r = Math.max(2, Math.min(dist, maxR));
       setDrag({ ...drag, cx, cy, r });
     } else if (drag.mode === "move") {
-      // move existing circle
       const targetX = x - drag.offsetX;
       const targetY = y - drag.offsetY;
       const { cx, cy } = clampToDisp(targetX, targetY, disp);
-
       setCircles((prev) =>
         prev.map((c, i) => (i === drag.index ? { ...c, cx, cy } : c))
       );
@@ -505,7 +532,7 @@ export default function MediaAndKpisTemplate({
         ]);
       }
     }
-    // if mode === "move", we’ve already updated circle position in onPointerMove
+    // if mode === "move", already updated in onPointerMove
 
     setDrag(null);
     try {
@@ -527,7 +554,7 @@ export default function MediaAndKpisTemplate({
         {/* LEFT: Media */}
         <section className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           {/* IMAGE */}
-          <MediaTile title="Image" icon={ImageIcon}>
+          <MediaTile title="Image" icon={ImageIcon} tone="sky">
             {finalImageSrc && !imgError ? (
               <div ref={imageWrapRef} className="relative h-full w-full">
                 <img
@@ -538,13 +565,15 @@ export default function MediaAndKpisTemplate({
                   onError={() => setImgError(true)}
                   draggable={false}
                 />
-                {/* Transparent SVG overlay for dark red circles */}
+                {/* Transparent SVG overlay for red circles */}
                 <svg
                   ref={overlayRef}
                   className="absolute inset-0"
                   width="100%"
                   height="100%"
-                  viewBox={`0 0 ${overlaySize.w || 1} ${overlaySize.h || 1}`}
+                  viewBox={`0 0 ${overlaySize.w || 1} ${
+                    overlaySize.h || 1
+                  }`}
                   onPointerDown={onPointerDown}
                   onPointerMove={onPointerMove}
                   onPointerUp={onPointerUp}
@@ -557,7 +586,7 @@ export default function MediaAndKpisTemplate({
                       cy={c.cy}
                       r={c.r}
                       fill="none"
-                      stroke="#FF0000" /* dark red */
+                      stroke="#FF0000"
                       strokeWidth="3"
                     />
                   ))}
@@ -578,7 +607,9 @@ export default function MediaAndKpisTemplate({
                   <div className="absolute right-2 bottom-2 pointer-events-auto z-20 flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setCircles((prev) => prev.slice(0, -1))}
+                      onClick={() =>
+                        setCircles((prev) => prev.slice(0, -1))
+                      }
                       className="rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-900 hover:bg-white"
                     >
                       Undo
@@ -625,7 +656,7 @@ export default function MediaAndKpisTemplate({
           </MediaTile>
 
           {/* VIDEO */}
-          <MediaTile title="Video" icon={PlayCircle}>
+          <MediaTile title="Video" icon={PlayCircle} tone="emerald">
             {videoData &&
             videoData.candidates &&
             videoData.candidates.length ? (
@@ -642,103 +673,134 @@ export default function MediaAndKpisTemplate({
         {/* RIGHT: KPIs */}
         <aside className="flex min-h-0 flex-col gap-2.5 sm:gap-3">
           {/* Defects card */}
-          <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md">
-            {/* subtle patterned backdrop */}
-            <div className="pointer-events-none absolute inset-0 -z-10 opacity-60">
-              <div className="absolute inset-0 bg-[radial-gradient(900px_300px_at_80%_-10%,rgba(16,185,129,0.10),transparent),radial-gradient(600px_220px_at_0%_100%,rgba(56,189,248,0.08),transparent)]" />
-            </div>
+          {/* Defects card */}
+<div
+  className="group relative flex flex-1 flex-col overflow-hidden
+             rounded-2xl border bg-gradient-to-br
+             from-red-500/20 via-rose-500/10 to-slate-950/80
+             border-red-400/60 p-3 sm:p-4 ring-1 ring-red-400/60 shadow-sm
+             transition-transform duration-200 hover:translate-y-0.5"
+>
+  {/* KPI-style corner glow */}
+  <div className="pointer-events-none absolute -inset-px rounded-[1.1rem]
+                  bg-[radial-gradient(140px_70px_at_0%_0%,rgba(255,255,255,0.22),transparent)]" />
 
-            {/* header */}
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-2">
-                <div className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-400/10 ring-1 ring-emerald-400/30">
-                  <Gauge className="h-4 w-4 text-emerald-300" />
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm uppercase tracking-wider text-white/90">
-                    Top 3 Defects
-                  </h3>
-                  <div className="text-[10px] text-white/60">
-                    Most frequent:{" "}
-                    <span className="text-white/80">
-                      {list?.[0]?.label ?? "—"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-white/70">
-                {new Date().toLocaleTimeString()}
-              </div>
-            </div>
-
-            {/* List + Pie */}
-            <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
-  {/* LEFT: top 3 list – vertically centered */}
-  <div className="flex h-full items-center">
-    <ol className="w-full space-y-1 pr-1 text-[13px] sm:text-sm font-thin">
-      {list.map((d, i) => {
-        const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
-        const color = COLORS[i % COLORS.length];
-        const top = list?.[0]?.value || 1;
-        const rel = Math.max(
-          0,
-          Math.min(100, top ? (d.value / top) * 100 : 0)
-        );
-        const total = list.reduce((a, b) => a + (b?.value || 0), 0);
-        const pct = total ? ((d.value / total) * 100).toFixed(1) : "0.0";
-
-        return (
-          <li
-            key={i}
-            className="relative flex items-center gap-2 overflow-hidden rounded-md border border-white/20 bg-white/10 px-2 py-1.5 sm:py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
+  <div className="relative flex h-full flex-col text-white">
+    {/* header */}
+    <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="inline-flex items-center gap-2">
+        <div className="grid h-8 w-8 place-items-center rounded-xl
+                        bg-red-600/30 ring-1 ring-red-300/70">
+          <Gauge className="h-4 w-4 text-white" />
+        </div>
+        <div>
+          <div
+            className="inline-flex items-center gap-1 rounded-md
+                       bg-red-600 px-2 py-0.5 text-[10px]
+                       font-semibold uppercase tracking-wider text-white"
           >
-            {/* colored bar background (relative to top defect) */}
-            <div
-              className="absolute inset-y-0 left-0 rounded-r-md"
-              style={{
-                width: `${rel}%`,
-                backgroundColor: color,   // same color as the badge
-                opacity: 0.25,            // bump this up/down for visibility
-              }}
-            />
-
-            <span
-              className="relative z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
-              style={{ backgroundColor: color, color: "black" }}
-            >
-              {String(i + 1).padStart(2, "0")}
+            Top 3 Defect&apos;s
+          </div>
+          <div className="mt-0.5 text-[10px] text-red-50/90">
+            Most frequent:{" "}
+            <span className="font-semibold text-white">
+              {list?.[0]?.label ?? "—"}
             </span>
+          </div>
+        </div>
+      </div>
+      <div
+        className="rounded-md bg-red-600/40 px-2 py-0.5
+                   text-[10px] text-white ring-1 ring-red-300/70"
+      >
+        {new Date().toLocaleTimeString()}
+      </div>
+    </div>
 
-            <span className="relative z-10 truncate text-white">
-              {d.label}
-            </span>
+    {/* List + Pie */}
+    <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
+      {/* LEFT: top 3 list – vertically centered */}
+      <div className="flex h-full items-center">
+        <ol className="w-full space-y-1 pr-1 text-[13px] sm:text-sm font-thin">
+          {list.map((d, i) => {
+            const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
+            const color = COLORS[i % COLORS.length];
+            const top = list?.[0]?.value || 1;
+            const rel = Math.max(
+              0,
+              Math.min(100, top ? (d.value / top) * 100 : 0)
+            );
+            const total = list.reduce(
+              (a, b) => a + (b?.value || 0),
+              0
+            );
+            const pct = total
+              ? ((d.value / total) * 100).toFixed(1)
+              : "0.0";
 
-            <span className="relative z-10 ml-auto flex items-center gap-2">
-              <span className="tabular-nums text-[11px] text-white/65">
-                {pct}%
-              </span>
-              <span
-                className="tabular-nums text-xs"
-                style={{ color }}
+            return (
+              <li
+                key={i}
+                className="relative flex items-center gap-2 overflow-hidden
+                           rounded-md border border-red-300/40
+                           bg-white/5 px-2 py-1.5 sm:py-1
+                           shadow-sm ring-1 ring-red-400/30
+                           transition hover:bg-white/10"
               >
-                {d.value}
-              </span>
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  </div>
+                {/* colored bar background (relative to top defect) */}
+                <div
+                  className="absolute inset-y-0 left-0 rounded-r-md"
+                  style={{
+                    width: `${rel}%`,
+                    backgroundColor: color,
+                    opacity: 0.28, // still visible but not overwhelming
+                  }}
+                />
 
-  {/* RIGHT: pie chart – unchanged */}
-  <div className="grid place-items-center">
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2">
-      <DefectsPie defects={list} size={150} thickness={16} />
+                <span
+                  className="relative z-10 inline-flex h-6 w-6 shrink-0
+                             items-center justify-center rounded-sm
+                             text-[11px] font-extrabold"
+                  style={{ backgroundColor: color, color: "black" }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+
+                <span className="relative z-10 truncate text-white">
+                  {d.label}
+                </span>
+
+                <span className="relative z-10 ml-auto flex items-center gap-2">
+                  <span className="tabular-nums text-[11px] text-red-50/90">
+                    {pct}%
+                  </span>
+                  <span
+                    className="tabular-nums text-xs"
+                    style={{ color }}
+                  >
+                    {d.value}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      {/* RIGHT: pie chart – neutral dark background so colors pop */}
+      <div className="grid place-items-center">
+        <div
+          className="rounded-xl border border-white/15
+                     bg-slate-950/80 p-2
+                     ring-1 ring-red-400/40 shadow-sm"
+        >
+          <DefectsPie defects={list} size={150} thickness={16} />
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-          </div>
 
           {/* compact KPI rows */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3">

@@ -83,8 +83,16 @@ export default function InspectionTopInput({
 
           <div className="relative">
             {/* Chips */}
-            <div className="py-2">
-              <ul className="flex flex-wrap items-center justify-center gap-2 lg:gap-3 px-2">
+            <div className="py-0">
+              <ul
+                className="
+                  flex items-stretch px-2
+                  gap-1 sm:gap-2 lg:gap-3
+                  justify-between
+                  w-full
+                  overflow-hidden
+                "
+              >
                 {fields.map((f) => {
                   const chipToneClass =
                     chipToneMap[f.tone] || chipToneMap.default;
@@ -95,9 +103,9 @@ export default function InspectionTopInput({
                       className={
                         isLight
                           ? // LIGHT chip: simple white
-                            "relative overflow-hidden rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm text-center"
+                            "relative flex-1 min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 shadow-sm text-center"
                           : // DARK chip: colorful gradient
-                            `relative overflow-hidden rounded-lg border bg-gradient-to-br px-3 py-1.5 shadow-sm text-center ring-1 ${chipToneClass}`
+                            `relative flex-1 min-w-0 overflow-hidden rounded-lg border bg-gradient-to-br px-2 py-1 sm:px-3 sm:py-1.5 shadow-sm text-center ring-1 ${chipToneClass}`
                       }
                       title={f.value || ""}
                     >
@@ -106,12 +114,12 @@ export default function InspectionTopInput({
                         <div className="pointer-events-none absolute -inset-px rounded-[0.9rem] bg-[radial-gradient(80px_40px_at_0%_0%,rgba(255,255,255,0.14),transparent)]" />
                       )}
 
-                      <div className="relative flex items-center gap-2">
+                      <div className="relative flex items-center gap-1 sm:gap-2 min-w-0">
                         <span
                           className={
                             isLight
-                              ? "text-[11px] sm:text-xs lg:text-sm text-slate-600 font-semibold tracking-wider"
-                              : "text-[11px] sm:text-xs lg:text-sm text-white/80 font-semibold tracking-wider"
+                              ? "text-[10px] sm:text-[11px] lg:text-xs text-slate-600 font-semibold tracking-wider whitespace-nowrap"
+                              : "text-[10px] sm:text-[11px] lg:text-xs text-white/80 font-semibold tracking-wider whitespace-nowrap"
                           }
                         >
                           {f.label}:
@@ -119,8 +127,8 @@ export default function InspectionTopInput({
                         <span
                           className={
                             isLight
-                              ? "text-sm sm:text-base lg:text-lg font-semibold text-slate-900 max-w-[12rem] sm:max-w-[16rem] lg:max-w-[22rem] truncate"
-                              : "text-sm sm:text-base lg:text-lg font-semibold text-white max-w-[12rem] sm:max-w-[16rem] lg:max-w-[22rem] truncate"
+                              ? "flex-1 min-w-0 text-xs sm:text-sm lg:text-base font-semibold text-slate-900 truncate"
+                              : "flex-1 min-w-0 text-xs sm:text-sm lg:text-base font-semibold text-white truncate"
                           }
                         >
                           {f.value || "—"}
