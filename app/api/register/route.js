@@ -7,9 +7,31 @@ export async function POST(req) {
     await dbConnect();
 
     const body = await req.json();
-    const { buyer, building, floor, line, style, item, color, created_by } = body;
+    const {
+      buyer,
+      building,
+      floor,
+      line,
+      style,
+      item,
+      color,
+      smv,
+      runDay,
+      created_by,
+    } = body;
 
-    if (!buyer || !building || !floor || !line || !style || !item || !color || !created_by) {
+    if (
+      !buyer ||
+      !building ||
+      !floor ||
+      !line ||
+      !style ||
+      !item ||
+      !color ||
+      !smv ||
+      !runDay ||
+      !created_by
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -27,11 +49,17 @@ export async function POST(req) {
       style,
       item,
       color,
+      smv,
+      runDay,
       created_by,
     });
 
     return NextResponse.json(
-      { success: true, message: "Record saved successfully", data: record },
+      {
+        success: true,
+        message: "Record saved successfully",
+        data: record,
+      },
       { status: 201 }
     );
   } catch (err) {
@@ -58,7 +86,9 @@ export async function GET(req) {
       );
     }
 
-    const records = await RegisterModel.find({ created_by }).sort({ createdAt: -1 });
+    const records = await RegisterModel.find({ created_by }).sort({
+      createdAt: -1,
+    });
 
     return NextResponse.json(
       { success: true, data: records },
@@ -79,7 +109,19 @@ export async function PUT(req) {
     await dbConnect();
 
     const body = await req.json();
-    const { id, buyer, building, floor, line, style, item, color, created_by } = body;
+    const {
+      id,
+      buyer,
+      building,
+      floor,
+      line,
+      style,
+      item,
+      color,
+      smv,
+      runDay,
+      created_by,
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -99,19 +141,26 @@ export async function PUT(req) {
 
     if (existingRecord.created_by !== created_by) {
       return NextResponse.json(
-        { success: false, message: "You can only edit your own records" },
+        {
+          success: false,
+          message: "You can only edit your own records",
+        },
         { status: 403 }
       );
     }
 
     const updatedRecord = await RegisterModel.findByIdAndUpdate(
       id,
-      { buyer, building, floor, line, style, item, color },
+      { buyer, building, floor, line, style, item, color, smv, runDay },
       { new: true, runValidators: true }
     );
 
     return NextResponse.json(
-      { success: true, message: "Record updated successfully", data: updatedRecord },
+      {
+        success: true,
+        message: "Record updated successfully",
+        data: updatedRecord,
+      },
       { status: 200 }
     );
   } catch (err) {
@@ -149,7 +198,10 @@ export async function DELETE(req) {
 
     if (existingRecord.created_by !== created_by) {
       return NextResponse.json(
-        { success: false, message: "You can only delete your own records" },
+        {
+          success: false,
+          message: "You can only delete your own records",
+        },
         { status: 403 }
       );
     }

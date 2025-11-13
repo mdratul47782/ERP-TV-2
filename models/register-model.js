@@ -9,6 +9,11 @@ const registerSchema = new mongoose.Schema(
     style: { type: String, required: true },
     item: { type: String, required: true },
     color: { type: String, required: true },
+
+    // 🔹 New fields
+    smv: { type: String, required: true },
+    runDay: { type: String, required: true },
+
     created_by: { type: String, required: true },
   },
   { timestamps: true }

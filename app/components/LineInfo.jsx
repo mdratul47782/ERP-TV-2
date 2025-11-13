@@ -15,6 +15,8 @@ export default function LineInfo() {
     style: "",
     item: "",
     color: "",
+    smv: "",
+    runDay: "",
   });
 
   const [existingRecord, setExistingRecord] = useState(null);
@@ -23,10 +25,14 @@ export default function LineInfo() {
   // Fetch user's record on mount
   useEffect(() => {
     fetchUserRecord();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUserRecord = async () => {
-    if (!auth) return;
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -38,13 +44,15 @@ export default function LineInfo() {
         const record = result.data[0];
         setExistingRecord(record);
         setFormValues({
-          buyer: record.buyer,
-          building: record.building,
-          floor: record.floor,
-          line: record.line,
-          style: record.style,
-          item: record.item,
-          color: record.color,
+          buyer: record.buyer || "",
+          building: record.building || "",
+          floor: record.floor || "",
+          line: record.line || "",
+          style: record.style || "",
+          item: record.item || "",
+          color: record.color || "",
+          smv: record.smv || "",
+          runDay: record.runDay || "",
         });
       }
     } catch (err) {
@@ -67,7 +75,9 @@ export default function LineInfo() {
       !formValues.line ||
       !formValues.style ||
       !formValues.item ||
-      !formValues.color
+      !formValues.color ||
+      !formValues.smv ||
+      !formValues.runDay
     ) {
       alert("Please fill in all fields");
       return;
@@ -120,6 +130,8 @@ export default function LineInfo() {
         style: "",
         item: "",
         color: "",
+        smv: "",
+        runDay: "",
       });
     }
   };
@@ -138,7 +150,13 @@ export default function LineInfo() {
     "Fifth Avenur",
   ];
 
-  const buildings = ["Building A", "Building B", "Building C", "Building D", "Building E"];
+  const buildings = [
+    "Building A",
+    "Building B",
+    "Building C",
+    "Building D",
+    "Building E",
+  ];
 
   // ✅ Updated floor options
   const floors = ["A-2", "B-2", "A-3", "B-3", "A-4", "B-4", "A-5", "B-5"];
@@ -184,7 +202,9 @@ export default function LineInfo() {
           />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold leading-tight">HKD Outdoor Innovations Ltd.</h1>
+          <h1 className="text-2xl font-semibold leading-tight">
+            HKD Outdoor Innovations Ltd.
+          </h1>
           <p className="text-lg opacity-90">Line Information Registration</p>
         </div>
       </div>
@@ -201,7 +221,9 @@ export default function LineInfo() {
       {/* Form */}
       <div className="grid grid-cols-[150px_1fr] gap-x-4 gap-y-5 px-8 py-8">
         {/* Buyer */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Register Buyer:</label>
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Register Buyer:
+        </label>
         <SearchableDropdown
           options={buyers}
           placeholder="Select Buyer"
@@ -210,7 +232,9 @@ export default function LineInfo() {
         />
 
         {/* Building */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Register Building:</label>
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Register Building:
+        </label>
         <SearchableDropdown
           options={buildings}
           placeholder="Select Building"
@@ -219,7 +243,9 @@ export default function LineInfo() {
         />
 
         {/* Floor */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Register Floor:</label>
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Register Floor:
+        </label>
         <SearchableDropdown
           options={floors}
           placeholder="Select Floor"
@@ -228,7 +254,9 @@ export default function LineInfo() {
         />
 
         {/* Line */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Register Line:</label>
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Register Line:
+        </label>
         <SearchableDropdown
           options={lines}
           placeholder="Select Line"
@@ -236,89 +264,130 @@ export default function LineInfo() {
           onChange={(val) => setFormValues({ ...formValues, line: val })}
         />
 
-        {/* ✅ Style (manual input) */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Style Number:</label>
+        {/* Style */}
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Style Number:
+        </label>
         <input
           type="text"
           placeholder="Enter Style Number"
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={formValues.style}
-          onChange={(e) => setFormValues({ ...formValues, style: e.target.value })}
+          onChange={(e) =>
+            setFormValues({ ...formValues, style: e.target.value })
+          }
         />
 
-        {/* ✅ Item (manual input) */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Style/Item-Description:</label>
+        {/* Item */}
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Style/Item-Description:
+        </label>
         <input
           type="text"
           placeholder="Enter Style/Item Description"
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={formValues.item}
-          onChange={(e) => setFormValues({ ...formValues, item: e.target.value })}
+          onChange={(e) =>
+            setFormValues({ ...formValues, item: e.target.value })
+          }
         />
 
-        {/* ✅ Color (manual input) */}
-        <label className="text-gray-700 font-medium text-sm pt-2">Color/Model</label>
+        {/* Color */}
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Color/Model:
+        </label>
         <input
           type="text"
           placeholder="Enter Color/Model"
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={formValues.color}
-          onChange={(e) => setFormValues({ ...formValues, color: e.target.value })}
+          onChange={(e) =>
+            setFormValues({ ...formValues, color: e.target.value })
+          }
+        />
+
+        {/* 🔹 SMV */}
+        <label className="text-gray-700 font-medium text-sm pt-2">SMV:</label>
+        <input
+          type="text"
+          placeholder="Enter SMV"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          value={formValues.smv}
+          onChange={(e) =>
+            setFormValues({ ...formValues, smv: e.target.value })
+          }
+        />
+
+        {/* 🔹 Run Day */}
+        <label className="text-gray-700 font-medium text-sm pt-2">
+          Run Day:
+        </label>
+        <input
+          type="text"
+          placeholder="Enter Run Day"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          value={formValues.runDay}
+          onChange={(e) =>
+            setFormValues({ ...formValues, runDay: e.target.value })
+          }
         />
 
         {/* Buttons */}
-        {/* Buttons */}
-{/* Buttons */}
-<div className="col-span-2 flex justify-between pt-6 gap-3">
-  {/* LEFT: Save / Update + Delete */}
-  <div className="flex gap-2">
-    {existingRecord && (
-      <button
-        onClick={handleDelete}
-        className="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
-      >
-        🗑️ Delete
-      </button>
-    )}
-    <button
-      onClick={handleSave}
-      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
-    >
-      {existingRecord ? "💾 Update Information" : "💾 Save Information"}
-    </button>
-  </div>
+        <div className="col-span-2 flex justify-between pt-6 gap-3">
+          {/* LEFT: Save / Update + Delete */}
+          <div className="flex gap-2">
+            {existingRecord && (
+              <button
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+              >
+                🗑️ Delete
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+            >
+              {existingRecord
+                ? "💾 Update Information"
+                : "💾 Save Information"}
+            </button>
+          </div>
 
-  {/* RIGHT: add Image Video + View Daily Report */}
-  <div className="flex gap-18">
-    <a
-      href="/HourlyProductionData"
-      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
-    >
-      add Image Video
-    </a>
+          {/* RIGHT: add Image Video + View Daily Report */}
+          <div className="flex gap-18">
+            <a
+              href="/HourlyProductionData"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+            >
+              Add Image Video
+            </a>
 
-    <a
-      href={`/DailyInProcessedEndLineInspectionReport/${auth?.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
-    >
-      📊 View Daily Report
-    </a>
-  </div>
-</div>
-
-
+            <a
+              href={`/DailyInProcessedEndLineInspectionReport/${auth?.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
+            >
+              📊 View Daily Report
+            </a>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
       <div className="bg-gray-50 px-6 py-4 text-right text-base text-gray-600 rounded-b-lg border-t">
         {auth ? (
           <>
-            Logged in as: <span className="font-semibold text-gray-800">{auth.user_name}</span>
+            Logged in as:{" "}
+            <span className="font-semibold text-gray-800">
+              {auth.user_name}
+            </span>
           </>
         ) : (
-          <span className="text-red-500 font-medium">You are not logged in</span>
+          <span className="text-red-500 font-medium">
+            You are not logged in
+          </span>
         )}
       </div>
     </div>
@@ -332,7 +401,9 @@ function SearchableDropdown({ options, value, onChange, placeholder }) {
   const ref = useRef(null);
 
   const filtered = query
-    ? options.filter((opt) => opt.toLowerCase().includes(query.toLowerCase()))
+    ? options.filter((opt) =>
+        opt.toLowerCase().includes(query.toLowerCase())
+      )
     : options;
 
   return (
@@ -370,7 +441,9 @@ function SearchableDropdown({ options, value, onChange, placeholder }) {
               </li>
             ))
           ) : (
-            <li className="px-3 py-2 text-gray-500 italic">No results found</li>
+            <li className="px-3 py-2 text-gray-500 italic">
+              No results found
+            </li>
           )}
         </ul>
       )}
