@@ -1,17 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
-import ThemeToggle from "./ThemeToggle";
+// import ThemeToggle from "./ThemeToggle";
 
 export default function NavBar() {
   const pathname = usePathname() || "/";
   const { auth } = useAuth();
 
-  const [isVisible, setIsVisible] = useState(false); // navbar hidden by default
+  // true = device supports hover (desktop/laptop mice, etc.)
+  const [isHoverDevice, setIsHoverDevice] = useState(false);
+  // start visible (mobile + desktop on first paint)
+  const [isVisible, setIsVisible] = useState(true);
+
+  // Detect if the device actually supports hover
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mq = window.matchMedia("(hover: hover)");
+    const updateHover = () => {
+      setIsHoverDevice(mq.matches);
+      // If it *does* support hover, start hidden until user moves to top
+      if (mq.matches) {
+        setIsVisible(false);
+      } else {
+        // No hover (mobile/tablet) → always visible
+        setIsVisible(true);
+      }
+    };
+
+    updateHover();
+    mq.addEventListener("change", updateHover);
+
+    return () => {
+      mq.removeEventListener("change", updateHover);
+    };
+  }, []);
 
   const PATHS = {
     home: "/",
@@ -38,23 +65,43 @@ export default function NavBar() {
          : "text-slate-700 hover:text-slate-900 hover:bg-black/5 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10"
      }`;
 
+  // Translate logic:
+  // - If device cannot hover (phone/tablet) → always translate-y-0 (visible)
+  // - If device can hover:
+  //      isVisible = true  → translate-y-0
+  //      isVisible = false → -translate-y-full
+  const navTranslateClass = !isHoverDevice
+    ? "translate-y-0"
+    : isVisible
+    ? "translate-y-0"
+    : "-translate-y-full";
+
+  // Hover handlers only for hover devices (desktop)
+  const hoverHandlers = isHoverDevice
+    ? {
+        onMouseEnter: () => setIsVisible(true),
+        onMouseLeave: () => setIsVisible(false),
+      }
+    : {};
+
   return (
     <>
-      {/* Hover strip at very top to reveal navbar */}
-      <div
-        className="fixed top-0 left-0 right-0 h-2 z-[40]"
-        onMouseEnter={() => setIsVisible(true)}
-      />
+      {/* Hover strip only for devices that actually support hover */}
+      {isHoverDevice && (
+        <div
+          className="fixed top-0 left-0 right-0 h-2 z-[40]"
+          onMouseEnter={() => setIsVisible(true)}
+        />
+      )}
 
       <nav
         role="navigation"
         aria-label="Primary"
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => setIsVisible(false)}
+        {...hoverHandlers}
         className={`
           fixed top-0 left-0 right-0 z-50
           transform transition-transform duration-300
-          ${isVisible ? "translate-y-0" : "-translate-y-full"}
+          ${navTranslateClass}
           border-b border-slate-200/60 bg-white/70 backdrop-blur
           dark:border-white/10 dark:bg-black/70
           shadow-[inset_0_-1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]
@@ -82,7 +129,7 @@ export default function NavBar() {
               </span>
             </Link>
 
-            {/* Center links — wrap instead of scroll */}
+            {/* Center links */}
             <ul className="flex flex-wrap items-center gap-1 md:gap-2">
               <li>
                 <Link
@@ -139,9 +186,8 @@ export default function NavBar() {
               </li>
             </ul>
 
-            {/* Right side: theme toggle + user chip */}
+            {/* Right side: user chip */}
             <div className="flex items-center gap-2">
-              {/* <ThemeToggle /> */}
               <div className="hidden md:flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-slate-600 dark:text-gray-300">
                   person
