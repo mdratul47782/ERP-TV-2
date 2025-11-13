@@ -719,85 +719,80 @@ export default function MediaAndKpisTemplate({
 
     {/* List + Pie */}
     <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
-      {/* LEFT: top 3 list – vertically centered */}
-      <div className="flex h-full items-center">
-        <ol className="w-full space-y-1 pr-1 text-[13px] sm:text-sm font-thin">
-          {list.map((d, i) => {
-            const COLORS = ["#FF0000", "#f59e0b", "#4B0082"]; // rose, amber, sky
-            const color = COLORS[i % COLORS.length];
-            const top = list?.[0]?.value || 1;
-            const rel = Math.max(
-              0,
-              Math.min(100, top ? (d.value / top) * 100 : 0)
-            );
-            const total = list.reduce(
-              (a, b) => a + (b?.value || 0),
-              0
-            );
-            const pct = total
-              ? ((d.value / total) * 100).toFixed(1)
-              : "0.0";
+  {/* LEFT: top 3 list – vertically centered */}
+  <div className="flex h-full items-center">
+    <ol className="w-full space-y-1 pr-1 text-[13px] sm:text-sm font-thin">
+      {list.map((d, i) => {
+        const COLORS = ["#FF0000", "#f59e0b", "#4B0082"]; // red, amber, indigo
+        const color = COLORS[i % COLORS.length];
+        const top = list?.[0]?.value || 1;
+        const rel = Math.max(
+          0,
+          Math.min(100, top ? (d.value / top) * 100 : 0)
+        );
 
-            return (
-              <li
-                key={i}
-                className="relative flex items-center gap-2 overflow-hidden
-                           rounded-md border border-red-300/40
-                           bg-white/5 px-2 py-1.5 sm:py-1
-                           shadow-sm ring-1 ring-red-400/30
-                           transition hover:bg-white/10"
-              >
-                {/* colored bar background (relative to top defect) */}
-                <div
-                  className="absolute inset-y-0 left-0 rounded-r-md"
-                  style={{
-                    width: `${rel}%`,
-                    backgroundColor: color,
-                    opacity: 0.28, // still visible but not overwhelming
-                  }}
-                />
+        return (
+          <li
+            key={i}
+            className="relative flex items-center gap-2 overflow-hidden
+                       rounded-md border border-red-300/40
+                       bg-white/5 px-2 py-1.5 sm:py-1
+                       shadow-sm ring-1 ring-red-400/30
+                       transition hover:bg-white/10"
+          >
+            {/* colored bar background (relative to top defect) */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-r-md"
+              style={{
+                width: `${rel}%`,
+                backgroundColor: color,
+                opacity: 0.28, // visible but not too strong
+              }}
+            />
 
-                <span
-                  className="relative z-10 inline-flex h-6 w-6 shrink-0
-                             items-center justify-center rounded-sm
-                             text-[11px] font-extrabold"
-                  style={{ backgroundColor: color, color: "black" }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
+            {/* rank badge */}
+            <span
+              className="relative z-10 inline-flex h-6 w-6 shrink-0
+                         items-center justify-center rounded-sm
+                         text-[11px] font-extrabold"
+              style={{ backgroundColor: color, color: "black" }}
+            >
+              {String(i + 1).padStart(2, "0")}
+            </span>
 
-                <span className="relative z-10 truncate text-white">
-                  {d.label}
-                </span>
+            {/* defect name – truncated to fit in the row */}
+            <span
+              className="relative z-10 flex-1 truncate text-white"
+              title={d.label} // show full name on hover
+            >
+              {d.label}
+            </span>
 
-                <span className="relative z-10 ml-auto flex items-center gap-2">
-                  <span className="tabular-nums text-[11px] text-red-50/90">
-                    {pct}%
-                  </span>
-                  <span
-                    className="tabular-nums text-xs"
-                    style={{ color }}
-                  >
-                    {d.value}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
+            {/* count only */}
+            <span
+              className="relative z-10 ml-2 tabular-nums text-xs font-semibold"
+              style={{ color }}
+            >
+              {d.value}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
 
-      {/* RIGHT: pie chart – neutral dark background so colors pop */}
-      <div className="grid place-items-center">
-        <div
-          className="rounded-xl border border-white/15
-                     bg-slate-950/80 p-2
-                     ring-1 ring-red-400/40 shadow-sm"
-        >
-          <DefectsPie defects={list} size={150} thickness={16} />
-        </div>
-      </div>
+  {/* RIGHT: pie chart – keeps percentages in legend */}
+  <div className="grid place-items-center">
+    <div
+      className="rounded-xl border border-white/15
+                 bg-slate-950/80 p-2
+                 ring-1 ring-red-400/40 shadow-sm"
+    >
+      <DefectsPie defects={list} size={150} thickness={16} />
     </div>
+  </div>
+</div>
+
   </div>
 </div>
 
