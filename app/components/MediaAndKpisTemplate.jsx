@@ -171,7 +171,7 @@ function DefectsPie({ defects, size = 150, thickness = 16 }) {
   const norm = normalizeDefects(defects, 3);
   const total = norm.reduce((a, b) => a + b.value, 0);
 
-  const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
+  const COLORS = ["#FF0000", "#f59e0b", "#4B0082"]; // rose, amber, sky
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
 
@@ -723,7 +723,7 @@ export default function MediaAndKpisTemplate({
       <div className="flex h-full items-center">
         <ol className="w-full space-y-1 pr-1 text-[13px] sm:text-sm font-thin">
           {list.map((d, i) => {
-            const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
+            const COLORS = ["#FF0000", "#f59e0b", "#4B0082"]; // rose, amber, sky
             const color = COLORS[i % COLORS.length];
             const top = list?.[0]?.value || 1;
             const rel = Math.max(

@@ -78,19 +78,19 @@ export default function InspectionTopInput({
         >
           {/* subtle corner glow (same as KpiTile) */}
           {!isLight && (
-            <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(120px_60px_at_0%_0%,rgba(255,255,255,0.12),transparent)]" />
+            <div className="pointer-events-none absolute -inset-px rounded-[1.1rem] bg-[radial-gradient(120px_60px_at_0%_0%,rgba(255,255,255,0.12),transparent)] " />
           )}
 
-          <div className="relative">
+          <div className="relative ">
             {/* Chips */}
             <div className="py-0">
               <ul
                 className="
-                  flex items-stretch px-2
-                  gap-1 sm:gap-2 lg:gap-3
+                  flex items-stretch px-1
+                  gap-1 sm:gap-1 lg:gap-3
                   justify-between
                   w-full
-                  overflow-hidden
+                  overflow-hidden py-0
                 "
               >
                 {fields.map((f) => {
