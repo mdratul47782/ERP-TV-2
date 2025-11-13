@@ -187,8 +187,9 @@ function DefectsPie({ defects, size = 150, thickness = 16 }) {
 
       {/* center total */}
       <div className="pointer-events-none absolute grid place-items-center text-center">
-        <div className="text-[10px] uppercase tracking-wider text-white/60">
-          Total
+        <div className="text-[12px] uppercase tracking-wider text-white/60">
+          <div>Top 3 Defect's</div>
+           Total
         </div>
         <div className="text-2xl font-extrabold tabular-nums text-white">
           {total}
@@ -556,7 +557,7 @@ export default function MediaAndKpisTemplate({
                       cy={c.cy}
                       r={c.r}
                       fill="none"
-                      stroke="#7f1d1d" /* dark red */
+                      stroke="#FF0000" /* dark red */
                       strokeWidth="3"
                     />
                   ))}
@@ -566,7 +567,7 @@ export default function MediaAndKpisTemplate({
                       cy={drag.cy}
                       r={drag.r}
                       fill="none"
-                      stroke="#7f1d1d"
+                      stroke="#FF0000"
                       strokeWidth="3"
                       strokeDasharray="6 6"
                     />
@@ -672,63 +673,71 @@ export default function MediaAndKpisTemplate({
 
             {/* List + Pie */}
             <div className="grid h-full grid-cols-1 gap-3 sm:grid-cols-2">
-              <ol className="space-y-1 overflow-auto pr-1 text-[13px] sm:text-sm font-thin">
-                {list.map((d, i) => {
-                  const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
-                  const color = COLORS[i % COLORS.length];
-                  const top = list?.[0]?.value || 1;
-                  const rel = Math.max(
-                    0,
-                    Math.min(100, top ? (d.value / top) * 100 : 0)
-                  );
-                  const total = list.reduce((a, b) => a + (b?.value || 0), 0);
-                  const pct = total
-                    ? ((d.value / total) * 100).toFixed(1)
-                    : "0.0";
+  {/* LEFT: top 3 list – vertically centered */}
+  <div className="flex h-full items-center">
+    <ol className="w-full space-y-1 pr-1 text-[13px] sm:text-sm font-thin">
+      {list.map((d, i) => {
+        const COLORS = ["#fb7185", "#f59e0b", "#38bdf8"]; // rose, amber, sky
+        const color = COLORS[i % COLORS.length];
+        const top = list?.[0]?.value || 1;
+        const rel = Math.max(
+          0,
+          Math.min(100, top ? (d.value / top) * 100 : 0)
+        );
+        const total = list.reduce((a, b) => a + (b?.value || 0), 0);
+        const pct = total ? ((d.value / total) * 100).toFixed(1) : "0.0";
 
-                  return (
-                    <li
-                      key={i}
-                      className="relative flex items-center gap-2 overflow-hidden rounded-md border border-white/20 bg-white/10 px-2 py-1.5 sm:py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
-                    >
-                      {/* bar background (relative to top defect) */}
-                      <div
-                        className="absolute inset-y-0 left-0 w-0 bg-white/10"
-                        style={{ width: `${rel}%` }}
-                      />
-                      <span
-                        className="relative z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
-                        style={{ backgroundColor: color, color: "black" }}
-                      >
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
+        return (
+          <li
+            key={i}
+            className="relative flex items-center gap-2 overflow-hidden rounded-md border border-white/20 bg-white/10 px-2 py-1.5 sm:py-1 shadow-sm ring-1 ring-white/10 transition hover:bg-white/20"
+          >
+            {/* colored bar background (relative to top defect) */}
+            <div
+              className="absolute inset-y-0 left-0 rounded-r-md"
+              style={{
+                width: `${rel}%`,
+                backgroundColor: color,   // same color as the badge
+                opacity: 0.25,            // bump this up/down for visibility
+              }}
+            />
 
-                      <span className="relative z-10 truncate text-white">
-                        {d.label}
-                      </span>
+            <span
+              className="relative z-10 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[11px] font-extrabold"
+              style={{ backgroundColor: color, color: "black" }}
+            >
+              {String(i + 1).padStart(2, "0")}
+            </span>
 
-                      <span className="relative z-10 ml-auto flex items-center gap-2">
-                        <span className="tabular-nums text-[11px] text-white/65">
-                          {pct}%
-                        </span>
-                        <span
-                          className="tabular-nums text-xs"
-                          style={{ color }}
-                        >
-                          {d.value}
-                        </span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
+            <span className="relative z-10 truncate text-white">
+              {d.label}
+            </span>
 
-              <div className="grid place-items-center">
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2">
-                  <DefectsPie defects={list} size={150} thickness={16} />
-                </div>
-              </div>
-            </div>
+            <span className="relative z-10 ml-auto flex items-center gap-2">
+              <span className="tabular-nums text-[11px] text-white/65">
+                {pct}%
+              </span>
+              <span
+                className="tabular-nums text-xs"
+                style={{ color }}
+              >
+                {d.value}
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
+
+  {/* RIGHT: pie chart – unchanged */}
+  <div className="grid place-items-center">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2">
+      <DefectsPie defects={list} size={150} thickness={16} />
+    </div>
+  </div>
+</div>
+
           </div>
 
           {/* compact KPI rows */}

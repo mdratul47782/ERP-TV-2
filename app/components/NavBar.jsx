@@ -101,15 +101,6 @@ export default function NavBar() {
                 Inspection Report
               </Link>
             </li>
-            {/* <li>
-              <Link
-                href={PATHS.hourly}
-                className={itemClass(isActive(PATHS.hourly))}
-                aria-current={isActive(PATHS.hourly) ? "page" : undefined}
-              >
-                Hourly Report
-              </Link>
-            </li> */}
             <li>
               <Link
                 href={PATHS.hourlyDashboard}
@@ -130,16 +121,19 @@ export default function NavBar() {
                 Quality Summary
               </Link>
             </li>
-            
           </ul>
 
           {/* Right side: theme toggle + user chip */}
           <div className="flex items-center gap-2">
             {/* <ThemeToggle /> */}
             <div className="hidden md:flex items-center gap-2">
-              <span className="text-xs text-slate-600 dark:text-gray-400">User</span>
-              <span className="rounded-md border border-black/10 bg-black/[0.03] px-2 py-1 text-xs text-slate-900
-                               dark:border-white/10 dark:bg-white/5 dark:text-white">
+              <span className="material-symbols-outlined text-base text-slate-600 dark:text-gray-300">
+                person
+              </span>
+              <span
+                className="rounded-md border border-black/10 bg-black/[0.03] px-2 py-1 text-xs text-slate-900
+                               dark:border-white/10 dark:bg-white/5 dark:text-white"
+              >
                 {auth?.user_name ?? "Guest"}
               </span>
             </div>

@@ -26,6 +26,10 @@ export default async function RootLayout({ children }) {
       <head>
         <Script id="theme-init" strategy="beforeInteractive">{`(function(){try{const s=localStorage.getItem('theme');const p=window.matchMedia('(prefers-color-scheme: dark)').matches;const isDark=s?s==='dark':p;const r=document.documentElement;if(isDark)r.classList.add('dark');else r.classList.remove('dark')}catch(e){}})();`}</Script>
         {/* Remove the <link> tags to Google Fonts if using next/font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=person"
+        />
       </head>
       <body className="antialiased">
         <AuthProvider>
