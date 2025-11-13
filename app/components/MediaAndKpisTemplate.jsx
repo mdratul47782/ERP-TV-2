@@ -231,9 +231,9 @@ function DefectsPie({ defects, size = 150, thickness = 16 }) {
         {(norm.length
           ? norm
           : [
-              { label: "—", value: 0 },
-              { label: "—", value: 0 },
-              { label: "—", value: 0 },
+              { label: "-", value: 0 },
+              { label: "-", value: 0 },
+              { label: "-", value: 0 },
             ]
         ).map((s, i) => {
           const pct = total > 0 ? (s.value / total) * 100 : 0;
