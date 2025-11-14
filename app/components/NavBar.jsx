@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
-// import ThemeToggle from "./ThemeToggle";
 
 export default function NavBar() {
   const pathname = usePathname() || "/";
@@ -65,11 +64,17 @@ export default function NavBar() {
          : "text-slate-700 hover:text-slate-900 hover:bg-black/5 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10"
      }`;
 
+  // 🔵 Distinct style for Login button on the right
+  const loginButtonClass = (active) =>
+    `px-3 py-1.5 rounded-md text-sm font-semibold shadow-sm
+     focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
+     ${
+       active
+         ? "bg-indigo-700 text-white"
+         : "bg-indigo-600 text-white hover:bg-indigo-700"
+     }`;
+
   // Translate logic:
-  // - If device cannot hover (phone/tablet) → always translate-y-0 (visible)
-  // - If device can hover:
-  //      isVisible = true  → translate-y-0
-  //      isVisible = false → -translate-y-full
   const navTranslateClass = !isHoverDevice
     ? "translate-y-0"
     : isVisible
@@ -117,19 +122,19 @@ export default function NavBar() {
               aria-label="HKD Home"
             >
               <Image
-                src="/1630632533544 (2).jpg"
-                alt="HKD Logo"
-                width={28}
-                height={28}
-                className="rounded-md ring-1 ring-black/10 dark:ring-white/10"
+                src="/ChatGPT Image Nov 14, 2025, 08_47_05 PM.png"
+                alt="HKD Outdoor Innovations Ltd. Logo"
+                width={30}
+                height={30}
+                className="rounded-md bg-amber-50"
                 priority
               />
-              <span className="font-extrabold tracking-tight text-base md:text-lg text-slate-900 dark:text-white">
+              <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white md:text-lg">
                 HKD
               </span>
             </Link>
 
-            {/* Center links */}
+            {/* Center links (Login removed from here) */}
             <ul className="flex flex-wrap items-center gap-1 md:gap-2">
               <li>
                 <Link
@@ -138,15 +143,6 @@ export default function NavBar() {
                   aria-current={isActive(PATHS.home) ? "page" : undefined}
                 >
                   Home
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href={PATHS.login}
-                  className={itemClass(isActive(PATHS.login))}
-                  aria-current={isActive(PATHS.login) ? "page" : undefined}
-                >
-                  Login
                 </Link>
               </li>
               <li title={auth?.id ? "" : "Login required"}>
@@ -186,9 +182,9 @@ export default function NavBar() {
               </li>
             </ul>
 
-            {/* Right side: user chip */}
+            {/* Right side: user chip + Login button */}
             <div className="flex items-center gap-2">
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden items-center gap-2 md:flex">
                 <span className="material-symbols-outlined text-base text-slate-600 dark:text-gray-300">
                   person
                 </span>
@@ -199,6 +195,15 @@ export default function NavBar() {
                   {auth?.user_name ?? "Guest"}
                 </span>
               </div>
+
+              {/* Login button moved here, different color */}
+              <Link
+                href={PATHS.login}
+                className={loginButtonClass(isActive(PATHS.login))}
+                aria-current={isActive(PATHS.login) ? "page" : undefined}
+              >
+                Login
+              </Link>
             </div>
           </div>
         </div>
