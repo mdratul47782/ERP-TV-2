@@ -357,7 +357,7 @@ export default function LineInfo() {
           {/* RIGHT: add Image Video + View Daily Report */}
           <div className="flex gap-18">
             <a
-              href="/HourlyProductionData"
+              href="/ImageVideoLinkPage"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 text-sm rounded-md shadow-sm transition duration-200 cursor-pointer"
             >
               Add Image Video
