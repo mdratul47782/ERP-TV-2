@@ -188,7 +188,7 @@ export default function LineInfo() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto bg-white border border-gray-200 min-h-[350px] shadow-lg rounded-lg mt-4 text-gray-800">
+    <div className="max-w-3xl mx-auto bg-white border border-gray-200 min-h-[350px] shadow-lg rounded-lg mt-2 text-gray-800">
       {/* Header */}
       <div className="flex items-center bg-gradient-to-br from-blue-600 to-blue-700 text-white px-6 py-4 rounded-t-lg">
         <div className="w-12 h-12 bg-white rounded-md mr-3 flex items-center justify-center">
