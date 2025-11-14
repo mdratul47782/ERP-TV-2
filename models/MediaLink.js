@@ -15,4 +15,5 @@ const mediaLinkSchema = new mongoose.Schema(
 // Compound index to ensure one record per user
 mediaLinkSchema.index({ "user.id": 1 }, { unique: true });
 
-export default mongoose.models.MediaLink || mongoose.model("MediaLink", mediaLinkSchema);
+export default mongoose.models.MediaLink ||
+  mongoose.model("MediaLink", mediaLinkSchema);

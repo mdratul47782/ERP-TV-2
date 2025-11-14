@@ -7,6 +7,8 @@ export default function MediaLinksEditor() {
   const [editing, setEditing] = useState(false);
   const [imageSrc, setImageSrc] = useState("");
   const [videoSrc, setVideoSrc] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [videoFile, setVideoFile] = useState(null);
   const [savedData, setSavedData] = useState(null);
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,12 +16,12 @@ export default function MediaLinksEditor() {
   // Fetch existing media links on mount
   useEffect(() => {
     if (!auth?.id) return;
-    
+
     const fetchData = async () => {
       try {
         const res = await fetch(`/api/media-links?userId=${auth.id}`);
         const json = await res.json();
-        
+
         if (json.data) {
           setSavedData(json.data);
           setImageSrc(json.data.imageSrc || "");
@@ -37,33 +39,52 @@ export default function MediaLinksEditor() {
 
   const isValidUrl = (u) => {
     if (!u) return true;
-    try { new URL(u); return true; } catch { return false; }
+    try {
+      new URL(u);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  const imageOk = isValidUrl(imageSrc);
-  const videoOk = isValidUrl(videoSrc);
+  const imageOk = !!imageFile || isValidUrl(imageSrc);
+  const videoOk = !!videoFile || isValidUrl(videoSrc);
 
   const handleSave = async () => {
     setStatus(null);
+
     if (!imageOk || !videoOk) {
-      setStatus({ type: "error", msg: "Please enter valid URLs" });
+      setStatus({ type: "error", msg: "Please enter valid URLs or upload files" });
       return;
     }
 
-    const payload = {
-      userId: auth.id,
-      userName: auth.user_name,
-      imageSrc: imageSrc?.trim() || "",
-      videoSrc: videoSrc?.trim() || "",
-    };
+    if (!auth?.id || !auth?.user_name) {
+      setStatus({ type: "error", msg: "Missing user information" });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("userId", auth.id);
+    formData.append("userName", auth.user_name);
+
+    // If a file is selected, upload that; otherwise use the URL field
+    if (imageFile) {
+      formData.append("imageFile", imageFile);
+    } else {
+      formData.append("imageSrc", imageSrc?.trim() || "");
+    }
+
+    if (videoFile) {
+      formData.append("videoFile", videoFile);
+    } else {
+      formData.append("videoSrc", videoSrc?.trim() || "");
+    }
 
     try {
-      // Use POST if no saved data, PATCH if updating
       const method = savedData ? "PATCH" : "POST";
       const res = await fetch("/api/media-links", {
         method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData, // IMPORTANT: no Content-Type header here
       });
 
       const json = await res.json();
@@ -73,15 +94,23 @@ export default function MediaLinksEditor() {
       }
 
       setSavedData(json.data);
+      setImageSrc(json.data.imageSrc || "");
+      setVideoSrc(json.data.videoSrc || "");
+      setImageFile(null);
+      setVideoFile(null);
       setEditing(false);
       setStatus({ type: "ok", msg: "Saved successfully!" });
     } catch (error) {
+      console.error(error);
       setStatus({ type: "error", msg: error.message });
     }
   };
 
   const handleCancel = () => {
     setStatus(null);
+    setImageFile(null);
+    setVideoFile(null);
+
     if (savedData) {
       setImageSrc(savedData.imageSrc || "");
       setVideoSrc(savedData.videoSrc || "");
@@ -185,38 +214,87 @@ export default function MediaLinksEditor() {
 
         {/* Edit Mode */}
         {editing && (
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-slate-300 mb-1 block">
-                Image URL
+          <div className="space-y-4">
+            {/* Image section */}
+            <div className="space-y-2">
+              <label className="text-xs text-slate-300 block">
+                Image URL (optional if you upload a file)
               </label>
               <input
                 type="url"
                 placeholder="https://example.com/image.jpg"
                 value={imageSrc}
-                onChange={(e) => setImageSrc(e.target.value)}
+                onChange={(e) => {
+                  setImageSrc(e.target.value);
+                  if (e.target.value) setImageFile(null);
+                }}
                 className={`w-full rounded border bg-slate-800 text-slate-100 px-3 py-1.5 text-sm outline-none ${
                   imageOk
                     ? "border-slate-700 focus:border-emerald-500"
                     : "border-rose-500"
                 }`}
               />
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    setImageFile(file || null);
+                    if (file) {
+                      setImageSrc("");
+                    }
+                  }}
+                  className="text-xs text-slate-300"
+                />
+                {imageFile && (
+                  <span className="text-[11px] text-slate-400">
+                    Selected: {imageFile.name}
+                  </span>
+                )}
+              </div>
             </div>
-            <div>
-              <label className="text-xs text-slate-300 mb-1 block">
-                Video URL
+
+            {/* Video section */}
+            <div className="space-y-2">
+              <label className="text-xs text-slate-300 block">
+                Video URL (optional if you upload a file)
               </label>
               <input
                 type="url"
                 placeholder="https://example.com/video.mp4"
                 value={videoSrc}
-                onChange={(e) => setVideoSrc(e.target.value)}
+                onChange={(e) => {
+                  setVideoSrc(e.target.value);
+                  if (e.target.value) setVideoFile(null);
+                }}
                 className={`w-full rounded border bg-slate-800 text-slate-100 px-3 py-1.5 text-sm outline-none ${
                   videoOk
                     ? "border-slate-700 focus:border-emerald-500"
                     : "border-rose-500"
                 }`}
               />
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    setVideoFile(file || null);
+                    if (file) {
+                      setVideoSrc("");
+                    }
+                  }}
+                  className="text-xs text-slate-300"
+                />
+                {videoFile && (
+                  <span className="text-[11px] text-slate-400">
+                    Selected: {videoFile.name}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
