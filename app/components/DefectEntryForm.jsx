@@ -107,6 +107,7 @@ function getUserIdFromAuth(auth) {
   // Be flexible with shapes:
   return auth?.user?.id || auth?.user?._id || auth?.id || auth?._id || null;
 }
+
 // --- Searchable dropdown for defects (no deps) ---
 function SearchableDefectPicker({
   options,
@@ -193,6 +194,7 @@ function SearchableDefectPicker({
     </div>
   );
 }
+
 export default function EndlineDashboard() {
   const { auth } = useAuth();
 
@@ -211,6 +213,20 @@ export default function EndlineDashboard() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // ---- toast / alert state ----
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error' | 'info', message: string }
+
+  // auto-hide toast
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const showToast = (message, type = "info") => {
+    setToast({ message, type });
+  };
 
   const todayLabel = useMemo(() => toLocalDateLabel(), []);
   const userId = useMemo(() => getUserIdFromAuth(auth), [auth]);
@@ -243,6 +259,7 @@ export default function EndlineDashboard() {
       setRows(data);
     } catch (e) {
       setError(e.message || "Load error");
+      showToast(e.message || "Load error", "error");
     } finally {
       setLoading(false);
     }
@@ -321,11 +338,13 @@ export default function EndlineDashboard() {
   const save = async () => {
     const msg = validate();
     if (msg) {
-      alert(`❌ Validation Error\n\n${msg}`);
+      // was: alert(`❌ Validation Error\n\n${msg}`);
+      showToast(msg, "error");
       return;
     }
     if (!userId && !userName) {
-      alert("❌ Missing user identity (auth).");
+      // was: alert("❌ Missing user identity (auth).");
+      showToast("Missing user identity (auth).", "error");
       return;
     }
 
@@ -347,9 +366,11 @@ export default function EndlineDashboard() {
       // refresh right panel
       await fetchToday();
       resetForm();
-      alert("✅ Saved!");
+      // was: alert("✅ Saved!");
+      showToast("Saved successfully!", "success");
     } catch (e) {
-      alert(`❌ Save failed: ${e.message}`);
+      // was: alert(`❌ Save failed: ${e.message}`);
+      showToast(e.message || "Save failed", "error");
     } finally {
       setSaving(false);
     }
@@ -381,9 +402,44 @@ export default function EndlineDashboard() {
       ? ((totals.passedQty / totals.inspectedQty) * 100).toFixed(1)
       : "—";
 
+  const toastStyles = {
+    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    error: "border-red-200 bg-red-50 text-red-800",
+    info: "border-blue-200 bg-blue-50 text-blue-800",
+  };
+
+  const toastIcon = {
+    success: "✅",
+    error: "⚠️",
+    info: "ℹ️",
+  };
+
   // ---- UI ----
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Toast / Alert */}
+      {toast && (
+        <div className="fixed right-4 top-4 z-50">
+          <div
+            className={`flex items-start gap-2 rounded-lg border px-4 py-3 shadow-lg ${toastStyles[toast.type]}`}
+          >
+            <span className="text-lg leading-none">
+              {toastIcon[toast.type]}
+            </span>
+            <div className="text-sm">
+              <p className="font-medium">{toast.message}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="ml-2 text-xs opacity-70 hover:opacity-100"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-7xl p-4 md:p-6 ">
         <div className="mb-4 flex items-center justify-between gap-3  ">
           <div>

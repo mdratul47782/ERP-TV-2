@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import MediaAndKpisTemplate from "./MediaAndKpisTemplate";
 
-const REFRESH_MS = 5000;
+const REFRESH_MS = 3000;
 
 export default function QualitySummaryComponent({
   hourlyData,
