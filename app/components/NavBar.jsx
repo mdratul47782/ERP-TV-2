@@ -41,7 +41,8 @@ export default function NavBar() {
 
   const PATHS = {
     home: "/",
-    login: "/login",
+    login: "/login", // Quality checker login
+    productionLogin: "/ProductionLogin", // 🔹 New garments company login
     daily: auth?.id
       ? `/DailyInProcessedEndLineInspectionReport/${auth.id}`
       : "/login",
@@ -73,7 +74,7 @@ export default function NavBar() {
   // ✅ Treat "logged in" as auth not null/undefined
   const isLoggedIn = auth !== null && auth !== undefined;
 
-  // 🔁 Compute class based on auth state
+  // 🔁 Compute class based on auth state (Quality checker)
   const authButtonClass = (active) => {
     if (isLoggedIn) {
       // Logout → red
@@ -88,6 +89,17 @@ export default function NavBar() {
       ${active ? "bg-indigo-700 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"}
     `;
   };
+
+  // 🔹 Style for Production Login button
+  const productionButtonClass = (active) => `
+    px-3 py-1.5 rounded-md text-sm font-semibold shadow-sm
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
+    ${
+      active
+        ? "bg-emerald-700 text-white"
+        : "bg-emerald-600 text-white hover:bg-emerald-700"
+    }
+  `;
 
   // Translate logic:
   const navTranslateClass = !isHoverDevice
@@ -197,7 +209,7 @@ export default function NavBar() {
               </li>
             </ul>
 
-            {/* Right side: user chip + Login/Logout button */}
+            {/* Right side: user chip + buttons */}
             <div className="flex items-center gap-2">
               <div className="hidden items-center gap-2 md:flex">
                 <span className="material-symbols-outlined text-base text-slate-600 dark:text-gray-300">
@@ -211,7 +223,18 @@ export default function NavBar() {
                 </span>
               </div>
 
-              {/* Login / Logout button */}
+              {/* 🔹 New Production Login button (garments company) */}
+              <Link
+                href={PATHS.productionLogin}
+                className={productionButtonClass(isActive(PATHS.productionLogin))}
+                aria-current={
+                  isActive(PATHS.productionLogin) ? "page" : undefined
+                }
+              >
+                Production Login
+              </Link>
+
+              {/* Existing Quality Checker Login / Logout button */}
               <Link
                 href={PATHS.login}
                 className={authButtonClass(isActive(PATHS.login))}
