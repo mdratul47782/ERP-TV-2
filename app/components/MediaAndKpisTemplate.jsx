@@ -710,8 +710,8 @@ export default function MediaAndKpisTemplate({
         </div>
       </div>
       <div
-        className="rounded-md bg-red-600/40 px-2 py-0.5
-                   text-[10px] text-white ring-1 ring-red-300/70"
+        className="rounded-md bg-red-600/40 px-3 py-0.5
+                   text-[15px] text-white ring-1 ring-red-300/70"
       >
         {new Date().toLocaleTimeString()}
       </div>

@@ -150,13 +150,7 @@ export default function LineInfo() {
     "Fifth Avenur",
   ];
 
-  const buildings = [
-    "Building A",
-    "Building B",
-    "Building C",
-    "Building D",
-    "Building E",
-  ];
+  const buildings = ["Building A", "Building B", "Building C", "Building D", "Building E"];
   const floors = ["A-2", "B-2", "A-3", "B-3", "A-4", "B-4", "A-5", "B-5"];
   const lines = Array.from({ length: 15 }, (_, i) => `Line ${i + 1}`);
 
@@ -173,25 +167,15 @@ export default function LineInfo() {
       {/* Header */}
       <div className="flex items-center gap-4 px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-600 text-white">
         <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm">
-          <Image
-            src="/1630632533544 (2).jpg"
-            alt="HKD"
-            width={64}
-            height={64}
-            priority
-          />
+          <Image src="/1630632533544 (2).jpg" alt="HKD" width={64} height={64} priority />
         </div>
         <div className="flex-1">
-          <h2 className="text-2xl font-semibold">
-            HKD Outdoor Innovations Ltd.
-          </h2>
+          <h2 className="text-2xl font-semibold">HKD Outdoor Innovations Ltd.</h2>
           <p className="text-sm opacity-90">Line Information Registration</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm opacity-90 hidden sm:inline">
-            {auth ? `Logged in as ${auth.user_name}` : "Not logged in"}
-          </span>
+          <span className="text-sm opacity-90 hidden sm:inline">{auth ? `Logged in as ${auth.user_name}` : "Not logged in"}</span>
         </div>
       </div>
 
@@ -199,31 +183,29 @@ export default function LineInfo() {
       <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: Preview / Quick actions */}
         <aside className="space-y-4">
-          {/* 🔍 Full live preview of all fields */}
           <div className="bg-gradient-to-br from-white to-slate-50 p-4 rounded-2xl border shadow-sm">
-            <h3 className="font-semibold text-gray-700">Full Preview</h3>
-            <dl className="mt-3 text-sm text-gray-600 space-y-1">
-              <Row label="Buyer" value={formValues.buyer} />
-              <Row label="Building" value={formValues.building} />
-              <Row label="Floor" value={formValues.floor} />
-              <Row label="Line" value={formValues.line} />
-              <Row label="Style No." value={formValues.style} />
-              <Row label="Item Description" value={formValues.item} />
-              <Row label="Color/Model" value={formValues.color} />
-              <Row label="SMV" value={formValues.smv} />
-              <Row label="Run Day" value={formValues.runDay} />
+            <h3 className="font-semibold text-gray-700">Quick Preview</h3>
+            <dl className="mt-3 text-sm text-gray-600">
+              <div className="flex justify-between py-1">
+                <dt>Buyer</dt>
+                <dd className="font-medium">{formValues.buyer || "—"}</dd>
+              </div>
+              <div className="flex justify-between py-1">
+                <dt>Building</dt>
+                <dd className="font-medium">{formValues.building || "—"}</dd>
+              </div>
+              <div className="flex justify-between py-1">
+                <dt>Floor</dt>
+                <dd className="font-medium">{formValues.floor || "—"}</dd>
+              </div>
+              <div className="flex justify-between py-1">
+                <dt>Line</dt>
+                <dd className="font-medium">{formValues.line || "—"}</dd>
+              </div>
             </dl>
 
             <div className="mt-4 flex gap-2">
-              <button
-                onClick={() =>
-                  window.open(
-                    `/DailyInProcessedEndLineInspectionReport/${auth?.id}`,
-                    "_blank"
-                  )
-                }
-                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow"
-              >
+              <button onClick={() => window.open(`/DailyInProcessedEndLineInspectionReport/${auth?.id}`, "_blank")} className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow"> 
                 <BarChart size={16} />
                 <span className="text-sm">View Daily Report</span>
               </button>
@@ -231,13 +213,8 @@ export default function LineInfo() {
           </div>
 
           <div className="p-4 rounded-2xl border bg-white shadow-sm flex items-center gap-3">
-            <div className="flex-1 text-sm text-gray-600">
-              Add image / video for this line (optional)
-            </div>
-            <a
-              href="/ImageVideoLinkPage"
-              className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-            >
+            <div className="flex-1 text-sm text-gray-600">Add image / video for this line (optional)</div>
+            <a href="/ImageVideoLinkPage" className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
               <PlusSquare size={16} />
               <span className="hidden sm:inline">Add</span>
             </a>
@@ -245,154 +222,62 @@ export default function LineInfo() {
         </aside>
 
         {/* Right column: Form */}
-        <form
-          className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave();
-          }}
-        >
+        <form className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
           <Field label="Register Buyer">
-            <SearchableDropdown
-              options={buyers}
-              value={formValues.buyer}
-              onChange={(val) =>
-                setFormValues({ ...formValues, buyer: val })
-              }
-              placeholder="Select buyer"
-            />
+            <SearchableDropdown options={buyers} value={formValues.buyer} onChange={(val) => setFormValues({ ...formValues, buyer: val })} placeholder="Select buyer" />
           </Field>
 
           <Field label="Register Building">
-            <SearchableDropdown
-              options={buildings}
-              value={formValues.building}
-              onChange={(val) =>
-                setFormValues({ ...formValues, building: val })
-              }
-              placeholder="Select building"
-            />
+            <SearchableDropdown options={buildings} value={formValues.building} onChange={(val) => setFormValues({ ...formValues, building: val })} placeholder="Select building" />
           </Field>
 
           <Field label="Register Floor">
-            <SearchableDropdown
-              options={floors}
-              value={formValues.floor}
-              onChange={(val) =>
-                setFormValues({ ...formValues, floor: val })
-              }
-              placeholder="Select floor"
-            />
+            <SearchableDropdown options={floors} value={formValues.floor} onChange={(val) => setFormValues({ ...formValues, floor: val })} placeholder="Select floor" />
           </Field>
 
           <Field label="Register Line">
-            <SearchableDropdown
-              options={lines}
-              value={formValues.line}
-              onChange={(val) =>
-                setFormValues({ ...formValues, line: val })
-              }
-              placeholder="Select line"
-            />
+            <SearchableDropdown options={lines} value={formValues.line} onChange={(val) => setFormValues({ ...formValues, line: val })} placeholder="Select line" />
           </Field>
 
           <Field label="Style Number">
-            <input
-              type="text"
-              placeholder="Enter style number"
-              value={formValues.style}
-              onChange={(e) =>
-                setFormValues({ ...formValues, style: e.target.value })
-              }
-              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none"
-            />
+            <input type="text" placeholder="Enter style number" value={formValues.style} onChange={(e) => setFormValues({ ...formValues, style: e.target.value })} className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none" />
           </Field>
 
           <Field label="Style/Item Description">
-            <input
-              type="text"
-              placeholder="Enter item description"
-              value={formValues.item}
-              onChange={(e) =>
-                setFormValues({ ...formValues, item: e.target.value })
-              }
-              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none"
-            />
+            <input type="text" placeholder="Enter item description" value={formValues.item} onChange={(e) => setFormValues({ ...formValues, item: e.target.value })} className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none" />
           </Field>
 
           <Field label="Color/Model">
-            <input
-              type="text"
-              placeholder="Enter color/model"
-              value={formValues.color}
-              onChange={(e) =>
-                setFormValues({ ...formValues, color: e.target.value })
-              }
-              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none"
-            />
+            <input type="text" placeholder="Enter color/model" value={formValues.color} onChange={(e) => setFormValues({ ...formValues, color: e.target.value })} className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none" />
           </Field>
 
           <Field label="SMV">
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Enter SMV"
-              value={formValues.smv}
-              onChange={(e) =>
-                setFormValues({ ...formValues, smv: e.target.value })
-              }
-              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none"
-            />
+            <input type="number" step="0.01" placeholder="Enter SMV" value={formValues.smv} onChange={(e) => setFormValues({ ...formValues, smv: e.target.value })} className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none" />
           </Field>
 
           <Field label="Run Day">
-            <input
-              type="text"
-              placeholder="Enter run day"
-              value={formValues.runDay}
-              onChange={(e) =>
-                setFormValues({ ...formValues, runDay: e.target.value })
-              }
-              className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none"
-            />
+            <input type="text" placeholder="Enter run day" value={formValues.runDay} onChange={(e) => setFormValues({ ...formValues, runDay: e.target.value })} className="w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-sky-400 outline-none" />
           </Field>
 
           <div className="md:col-span-2 flex items-center justify-between gap-3 mt-2">
             <div className="flex gap-2">
               {existingRecord && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                >
+                <button type="button" onClick={handleDelete} className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">
                   <Trash2 size={16} /> Delete
                 </button>
               )}
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg"
-              >
-                <Save size={16} />{" "}
-                {existingRecord ? "Update Information" : "Save Information"}
+              <button type="submit" disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg">
+                <Save size={16} /> {existingRecord ? "Update Information" : "Save Information"}
               </button>
             </div>
 
             <div className="flex gap-2">
-              <a
-                href="/ImageVideoLinkPage"
-                className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-              >
+              <a href="/ImageVideoLinkPage" className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
                 <PlusSquare size={16} /> Add Image/Video
               </a>
 
-              <a
-                href={`/DailyInProcessedEndLineInspectionReport/${auth?.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-              >
+              <a href={`/DailyInProcessedEndLineInspectionReport/${auth?.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">
                 <BarChart size={16} /> View Daily Report
               </a>
             </div>
@@ -400,12 +285,11 @@ export default function LineInfo() {
         </form>
       </div>
 
-      <div className="px-6 py-4 bg-gray-50 text-right text-sm text-gray-600 border-t">
-        • HKD OUTDOOR INNOVATIONS LTD.
-      </div>
+      <div className="px-6 py-4 bg-gray-50 text-right text-sm text-gray-600 border-t">• HKD OUTDOOR INNOVATIONS LTD.</div>
     </section>
   );
 }
+
 
 /* ---------- Small presentational helpers ---------- */
 function Field({ label, children }) {
@@ -414,17 +298,6 @@ function Field({ label, children }) {
       <span className="mb-2 font-medium">{label}</span>
       {children}
     </label>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between gap-3">
-      <dt className="text-gray-500">{label}</dt>
-      <dd className="font-medium text-gray-800">
-        {value && value !== "" ? value : "—"}
-      </dd>
-    </div>
   );
 }
 
@@ -442,9 +315,7 @@ function SearchableDropdown({ options, value, onChange, placeholder }) {
   }, []);
 
   const filtered = query
-    ? options.filter((opt) =>
-        opt.toLowerCase().includes(query.toLowerCase())
-      )
+    ? options.filter((opt) => opt.toLowerCase().includes(query.toLowerCase()))
     : options;
 
   return (
@@ -458,10 +329,7 @@ function SearchableDropdown({ options, value, onChange, placeholder }) {
           placeholder={placeholder}
           value={query || value}
           onFocus={() => setOpen(true)}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           className="w-full rounded-lg border px-3 py-2 pr-10 focus:ring-2 focus:ring-sky-400 outline-none"
         />
 
@@ -474,24 +342,12 @@ function SearchableDropdown({ options, value, onChange, placeholder }) {
         <ul className="absolute z-50 mt-2 max-h-48 w-full overflow-auto rounded-lg border bg-white shadow-lg text-sm">
           {filtered.length > 0 ? (
             filtered.map((opt) => (
-              <li
-                key={opt}
-                onMouseDown={() => {
-                  onChange(opt);
-                  setQuery(opt);
-                  setOpen(false);
-                }}
-                className={`cursor-pointer px-3 py-2 hover:bg-sky-600 hover:text-white ${
-                  opt === value ? "bg-sky-100" : ""
-                }`}
-              >
+              <li key={opt} onMouseDown={() => { onChange(opt); setQuery(opt); setOpen(false); }} className={`cursor-pointer px-3 py-2 hover:bg-sky-600 hover:text-white ${opt === value ? "bg-sky-100" : ""}`}>
                 {opt}
               </li>
             ))
           ) : (
-            <li className="px-3 py-2 text-gray-500 italic">
-              No results found
-            </li>
+            <li className="px-3 py-2 text-gray-500 italic">No results found</li>
           )}
         </ul>
       )}
