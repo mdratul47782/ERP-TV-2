@@ -20,10 +20,10 @@ function computeBaseTargetPerHour(header) {
   const planEfficiencyPercent = toNumberOrZero(header.planEfficiency);
   const planEffDecimal = planEfficiencyPercent / 100;
 
-  let targetFromTodayTarget =
+  const targetFromTodayTarget =
     workingHour > 0 ? todayTarget / workingHour : 0;
 
-  let targetFromCapacity =
+  const targetFromCapacity =
     manpowerPresent > 0 && smv > 0
       ? (manpowerPresent * 60 * planEffDecimal) / smv
       : 0;
@@ -63,10 +63,7 @@ export async function GET(request) {
   } catch (error) {
     console.error("GET /api/hourly-productions error:", error);
     return Response.json(
-      {
-        success: false,
-        message: "Failed to fetch hourly production records",
-      },
+      { success: false, message: "Failed to fetch hourly production records" },
       { status: 500 }
     );
   }
@@ -121,13 +118,14 @@ export async function POST(request) {
 
     const manpowerPresent = toNumberOrZero(header.manpowerPresent);
     const smv = toNumberOrZero(header.smv);
-    const planEfficiencyPercent = toNumberOrZero(header.planEfficiency);
-    const planEffDecimal = planEfficiencyPercent / 100;
 
     // 🔹 Base hourly target at plan efficiency
     const baseTargetPerHour = computeBaseTargetPerHour(header);
 
-    // 🔹 Load previous hours for carry-over calculation
+    // 🔹 Load previous hours for:
+    //  - carry-over shortfall
+    //  - total achieved before this hour
+    //  - sum of previous achieveEfficiency (for Total Efficiency)
     const previousRecords = await HourlyProductionModel.find({
       headerId,
       "productionUser.id": productionUser.id,
@@ -137,13 +135,19 @@ export async function POST(request) {
       .lean();
 
     let shortfallUntilPrev = 0;
+    let totalAchievedBefore = 0;
+    let sumAchieveEffPrev = 0;
 
     for (const rec of previousRecords) {
       const prevTarget = toNumberOrZero(
         rec.dynamicTarget ?? rec.baseTargetPerHour
       );
       const prevAchieved = toNumberOrZero(rec.achievedQty);
+      const prevAchieveEff = toNumberOrZero(rec.achieveEfficiency);
+
       shortfallUntilPrev += prevTarget - prevAchieved;
+      totalAchievedBefore += prevAchieved;
+      sumAchieveEffPrev += prevAchieveEff;
     }
 
     // 🔹 Dynamic target for this hour: base + previous shortfall
@@ -153,23 +157,31 @@ export async function POST(request) {
     const varianceQty = dynamicTarget - achievedQty;
 
     // 🔹 Hourly efficiency (this hour)
-    //   Hourly Eff % = Hourly Output * SMV / (Manpower * 60) * 100
+    // Formula: Hourly Output * SMV / (Manpower * 60) * 100
     const hourlyEfficiency =
       manpowerPresent > 0 && smv > 0
         ? (achievedQty * smv * 100) / (manpowerPresent * 60)
         : 0;
 
-    // 🔹 Achieve Efficiency (your formula)
-    //   Formula:
-    //   Hourly Output * SMV / (Manpower * 60) * Working Hour
-    //   Here Working Hour = current hour number
+    // 🔹 Overall efficiency up to this hour (Achieve Efficiency)
+    // TotalAchievedUpToThisHour = previous achieved + this hour
+    const totalAchievedUpToThisHour = totalAchievedBefore + achievedQty;
+
+    // AchieveEff% = TotalAchieved * SMV / (Manpower * 60 * HourCompleted) * 100
     const achieveEfficiency =
       manpowerPresent > 0 && smv > 0 && hour > 0
-        ? (achievedQty * smv * hour) / (manpowerPresent * 60)
+        ? (totalAchievedUpToThisHour * smv * 100) /
+          (manpowerPresent * 60 * hour)
         : 0;
 
-    // 🔹 For now, totalEfficiency = achieveEfficiency (you can change later)
-    const totalEfficiency = achieveEfficiency;
+    // 🔹 Total Efficiency:
+    //  Total(Total achieve efficiency from 1st h to present h) / hour
+    //
+    //  => average of achieveEfficiency values from hour 1..current
+    const totalEfficiency =
+      hour > 0
+        ? (sumAchieveEffPrev + achieveEfficiency) / hour
+        : 0;
 
     // 🔹 Doc to save
     const doc = {
@@ -180,8 +192,8 @@ export async function POST(request) {
       dynamicTarget,
       varianceQty,
       hourlyEfficiency,
-      achieveEfficiency,
-      totalEfficiency,
+      achieveEfficiency,  // overall till this hour
+      totalEfficiency,    // average from 1st hour to this hour
       productionUser: {
         id: productionUser.id,
         Production_user_name: productionUser.Production_user_name,
@@ -190,7 +202,7 @@ export async function POST(request) {
       },
     };
 
-    // 🔹 Upsert (one record per header + user + hour)
+    // 🔹 Upsert (one record per header + production user + hour)
     const existing = await HourlyProductionModel.findOne({
       headerId,
       "productionUser.id": doc.productionUser.id,
