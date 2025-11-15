@@ -1,15 +1,16 @@
 // app/components/ProductionInputForm.jsx
 "use client";
+
 import ProductionSignInOut from "../components/auth/ProductionSignInOut";
 import { useEffect, useState } from "react";
 import { useProductionAuth } from "../hooks/useProductionAuth";
 import { useAuth } from "../hooks/useAuth";
 
 export default function ProductionInputForm() {
-  // ✅ Destructure correctly
   const { ProductionAuth, loading: productionLoading } = useProductionAuth();
   const { auth, loading: authLoading } = useAuth();
 
+  // 🔹 Main form state (added smv)
   const [form, setForm] = useState({
     operatorTo: "",
     manpowerPresent: "",
@@ -19,12 +20,15 @@ export default function ProductionInputForm() {
     planEfficiency: "",
     todayTarget: "",
     achieve: "",
+    smv: "", // ✅ NEW
   });
 
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false); // ✅ NEW
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [headerId, setHeaderId] = useState(null); // ✅ track existing header
 
   // 🔹 Helper: map header doc → form state
   const fillFormFromHeader = (header) => {
@@ -38,8 +42,23 @@ export default function ProductionInputForm() {
       planEfficiency: header.planEfficiency?.toString() ?? "",
       todayTarget: header.todayTarget?.toString() ?? "",
       achieve: header.achieve?.toString() ?? "",
+      smv: header.smv?.toString() ?? "", // ✅ NEW
     });
   };
+
+  // 🔹 Reset form helper
+  const resetForm = () =>
+    setForm({
+      operatorTo: "",
+      manpowerPresent: "",
+      manpowerAbsent: "",
+      workingHour: "",
+      planQuantity: "",
+      planEfficiency: "",
+      todayTarget: "",
+      achieve: "",
+      smv: "", // ✅ NEW
+    });
 
   // 🔹 Load today's header once ProductionAuth is ready
   useEffect(() => {
@@ -50,6 +69,7 @@ export default function ProductionInputForm() {
       try {
         setLoadingExisting(true);
         setError("");
+        setSuccess("");
 
         const res = await fetch(
           `/api/production-headers?productionUserId=${ProductionAuth.id}`
@@ -58,6 +78,9 @@ export default function ProductionInputForm() {
 
         if (res.ok && json.success && json.data) {
           fillFormFromHeader(json.data);
+          setHeaderId(json.data._id); // ✅ remember document id
+        } else {
+          setHeaderId(null);
         }
       } catch (err) {
         console.error(err);
@@ -97,7 +120,7 @@ export default function ProductionInputForm() {
     };
   };
 
-  // 🔹 Submit → POST (upsert today's record)
+  // 🔹 Save / Update (POST for new, PATCH for existing)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -108,7 +131,9 @@ export default function ProductionInputForm() {
       return;
     }
 
+    const isUpdate = Boolean(headerId);
     setSaving(true);
+
     try {
       const payload = {
         ...form,
@@ -117,8 +142,13 @@ export default function ProductionInputForm() {
         // optional: productionDate: "2025-11-15"
       };
 
-      const res = await fetch("/api/production-headers", {
-        method: "POST",
+      const endpoint = isUpdate
+        ? `/api/production-headers/${headerId}`
+        : "/api/production-headers";
+      const method = isUpdate ? "PATCH" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -129,13 +159,21 @@ export default function ProductionInputForm() {
         const msg =
           json?.errors?.join(", ") ||
           json?.message ||
-          "Failed to save production header";
+          (isUpdate
+            ? "Failed to update production header"
+            : "Failed to save production header");
         throw new Error(msg);
       }
 
       const saved = json.data;
-      fillFormFromHeader(saved); // ✅ keep saved data in inputs
-      setSuccess("Production header saved successfully for today.");
+      fillFormFromHeader(saved);
+      setHeaderId(saved._id);
+
+      setSuccess(
+        isUpdate
+          ? "Production header updated successfully."
+          : "Production header saved successfully for today."
+      );
     } catch (err) {
       console.error(err);
       setError(err.message || "Something went wrong.");
@@ -144,7 +182,41 @@ export default function ProductionInputForm() {
     }
   };
 
-  const busy = saving || loadingExisting || productionLoading || authLoading;
+  // 🔹 Delete header
+  const handleDelete = async () => {
+    if (!headerId) return;
+    setError("");
+    setSuccess("");
+    setDeleting(true);
+
+    try {
+      const res = await fetch(`/api/production-headers/${headerId}`, {
+        method: "DELETE",
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        const msg =
+          json?.message || "Failed to delete production header record";
+        throw new Error(msg);
+      }
+
+      resetForm();
+      setHeaderId(null);
+      setSuccess("Production header deleted successfully.");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Something went wrong while deleting.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const busy =
+    saving || deleting || loadingExisting || productionLoading || authLoading;
+
+  const isExisting = Boolean(headerId);
 
   return (
     <>
@@ -219,6 +291,14 @@ export default function ProductionInputForm() {
             onChange={handleChange}
             placeholder="e.g. 85"
           />
+          {/* ✅ NEW SMV FIELD */}
+          <Field
+            label="SMV"
+            name="smv"
+            value={form.smv}
+            onChange={handleChange}
+            placeholder="e.g. 1.2"
+          />
           <Field
             label="Today Target"
             name="todayTarget"
@@ -236,32 +316,38 @@ export default function ProductionInputForm() {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex flex-wrap justify-end gap-2 pt-2">
           <button
             type="button"
-            onClick={() =>
-              setForm({
-                operatorTo: "",
-                manpowerPresent: "",
-                manpowerAbsent: "",
-                workingHour: "",
-                planQuantity: "",
-                planEfficiency: "",
-                todayTarget: "",
-                achieve: "",
-              })
-            }
+            onClick={resetForm}
             className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
             disabled={busy}
           >
             Clear
           </button>
+
+          {/* Delete only when record exists */}
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-60"
+            disabled={busy || !isExisting}
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+
           <button
             type="submit"
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-70"
             disabled={busy}
           >
-            {saving ? "Saving..." : "Save Header"}
+            {saving
+              ? isExisting
+                ? "Updating..."
+                : "Saving..."
+              : isExisting
+              ? "Update Header"
+              : "Save Header"}
           </button>
         </div>
       </form>

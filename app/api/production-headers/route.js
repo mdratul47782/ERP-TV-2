@@ -20,7 +20,6 @@ function parseOptionalNumber(value, fieldName, errors) {
 }
 
 // 🔸 GET /api/production-headers?productionUserId=...&date=YYYY-MM-DD
-//    → Get header for that production user & date (default: today)
 export async function GET(request) {
   try {
     await dbConnect();
@@ -72,17 +71,17 @@ export async function POST(request) {
       planEfficiency,
       todayTarget,
       achieve,
+      smv, // ✅ NEW
       productionUser,
       qualityUser,
       productionDate, // optional from client
     } = body;
 
-    // ✅ THIS is where your previous error came from
     if (!productionUser || !productionUser.id) {
       errors.push("productionUser.id is required");
     }
 
-    const date = productionDate || getTodayDateString(); // ALWAYS set productionDate
+    const date = productionDate || getTodayDateString();
 
     const doc = {
       productionDate: date,
@@ -106,6 +105,7 @@ export async function POST(request) {
       ),
       todayTarget: parseOptionalNumber(todayTarget, "todayTarget", errors),
       achieve: parseOptionalNumber(achieve, "achieve", errors),
+      smv: parseOptionalNumber(smv, "smv", errors), // ✅ NEW
 
       // Production user snapshot (no password)
       productionUser: {

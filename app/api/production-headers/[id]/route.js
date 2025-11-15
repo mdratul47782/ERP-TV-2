@@ -13,11 +13,39 @@ function parseOptionalNumber(value, fieldName, errors) {
   return num;
 }
 
+// 🔹 Robust helper: get id from context OR from URL path
+function getIdFromContextOrUrl(request, context) {
+  // 1) Next App Router typical shape: { params: { id: "..." } }
+  const fromParams =
+    context?.params?.id ??
+    // 2) Just in case someone passes { id: "..." } directly
+    context?.id;
+
+  if (fromParams) return fromParams;
+
+  // 3) Fallback: parse from URL path /api/production-headers/:id
+  try {
+    const url = new URL(request.url);
+    const parts = url.pathname.split("/").filter(Boolean); // remove empty
+    // e.g. ["api", "production-headers", "6918..."]
+    return parts[parts.length - 1];
+  } catch {
+    return undefined;
+  }
+}
+
 // 🔸 GET /api/production-headers/:id
-export async function GET(_request, { params }) {
+export async function GET(request, context) {
   try {
     await dbConnect();
-    const { id } = params;
+
+    const id = getIdFromContextOrUrl(request, context);
+    if (!id) {
+      return Response.json(
+        { success: false, message: "Route param 'id' is required" },
+        { status: 400 }
+      );
+    }
 
     const header = await ProductionHeaderModel.findById(id).lean();
     if (!header) {
@@ -38,10 +66,18 @@ export async function GET(_request, { params }) {
 }
 
 // 🔸 PATCH /api/production-headers/:id
-export async function PATCH(request, { params }) {
+export async function PATCH(request, context) {
   try {
     await dbConnect();
-    const { id } = params;
+
+    const id = getIdFromContextOrUrl(request, context);
+    if (!id) {
+      return Response.json(
+        { success: false, message: "Route param 'id' is required" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const errors = [];
     const update = {};
@@ -55,6 +91,7 @@ export async function PATCH(request, { params }) {
       "planEfficiency",
       "todayTarget",
       "achieve",
+      "smv", // ✅ allow updating SMV
     ];
 
     for (const field of fields) {
@@ -113,12 +150,20 @@ export async function PATCH(request, { params }) {
 }
 
 // 🔸 DELETE /api/production-headers/:id
-export async function DELETE(_request, { params }) {
+export async function DELETE(request, context) {
   try {
     await dbConnect();
-    const { id } = params;
+
+    const id = getIdFromContextOrUrl(request, context);
+    if (!id) {
+      return Response.json(
+        { success: false, message: "Route param 'id' is required" },
+        { status: 400 }
+      );
+    }
 
     const deleted = await ProductionHeaderModel.findByIdAndDelete(id);
+
     if (!deleted) {
       return Response.json(
         { success: false, message: "Production header not found" },

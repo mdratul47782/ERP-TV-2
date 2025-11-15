@@ -5,7 +5,7 @@ import mongoose, { Schema, models, model } from "mongoose";
 const EmbeddedUserSchema = new Schema(
   {
     id: { type: String, required: true },
-    user_name: { type: String },            // for quality user
+    user_name: { type: String }, // for quality user
     Production_user_name: { type: String }, // for production user
     phone: { type: String },
     bio: { type: String },
@@ -28,6 +28,7 @@ const ProductionHeaderSchema = new Schema(
     workingHour: { type: Number },
     planQuantity: { type: Number },
     planEfficiency: { type: Number },
+    smv: { type: Number }, // ✅ NEW
     todayTarget: { type: Number },
     achieve: { type: Number },
 
