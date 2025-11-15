@@ -17,7 +17,6 @@ export default function ProductionSignInOut() {
     router.push("/ProductionHomePage");
   };
 
-  console.log("ProductionAuth =>", ProductionAuth);
 
   return (
     <div className="flex items-center justify-center">

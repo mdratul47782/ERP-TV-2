@@ -10,7 +10,7 @@ export default function ProductionInputForm() {
   const { ProductionAuth, loading: productionLoading } = useProductionAuth();
   const { auth, loading: authLoading } = useAuth();
 
-  // 🔹 Main form state (added smv)
+  // 🔹 Main form state (includes smv)
   const [form, setForm] = useState({
     operatorTo: "",
     manpowerPresent: "",
@@ -20,17 +20,17 @@ export default function ProductionInputForm() {
     planEfficiency: "",
     todayTarget: "",
     achieve: "",
-    smv: "", // ✅ NEW
+    smv: "",
   });
 
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false); // ✅ NEW
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [headerId, setHeaderId] = useState(null); // ✅ track existing header
+  const [headerId, setHeaderId] = useState(null);
 
-  // 🔹 Helper: map header doc → form state
+  // 🔹 Map header doc → form state
   const fillFormFromHeader = (header) => {
     if (!header) return;
     setForm({
@@ -42,11 +42,11 @@ export default function ProductionInputForm() {
       planEfficiency: header.planEfficiency?.toString() ?? "",
       todayTarget: header.todayTarget?.toString() ?? "",
       achieve: header.achieve?.toString() ?? "",
-      smv: header.smv?.toString() ?? "", // ✅ NEW
+      smv: header.smv?.toString() ?? "",
     });
   };
 
-  // 🔹 Reset form helper
+  // 🔹 Reset form
   const resetForm = () =>
     setForm({
       operatorTo: "",
@@ -57,7 +57,7 @@ export default function ProductionInputForm() {
       planEfficiency: "",
       todayTarget: "",
       achieve: "",
-      smv: "", // ✅ NEW
+      smv: "",
     });
 
   // 🔹 Load today's header once ProductionAuth is ready
@@ -78,7 +78,7 @@ export default function ProductionInputForm() {
 
         if (res.ok && json.success && json.data) {
           fillFormFromHeader(json.data);
-          setHeaderId(json.data._id); // ✅ remember document id
+          setHeaderId(json.data._id);
         } else {
           setHeaderId(null);
         }
@@ -99,7 +99,7 @@ export default function ProductionInputForm() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 🔹 Build snapshots from contexts (no password)
+  // 🔹 Snapshots (no password)
   const buildProductionUserSnapshot = () => {
     if (!ProductionAuth) return null;
     return {
@@ -120,7 +120,7 @@ export default function ProductionInputForm() {
     };
   };
 
-  // 🔹 Save / Update (POST for new, PATCH for existing)
+  // 🔹 Save / Update
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -139,7 +139,6 @@ export default function ProductionInputForm() {
         ...form,
         productionUser: buildProductionUserSnapshot(),
         qualityUser: buildQualityUserSnapshot(),
-        // optional: productionDate: "2025-11-15"
       };
 
       const endpoint = isUpdate
@@ -223,114 +222,112 @@ export default function ProductionInputForm() {
       <ProductionSignInOut />
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-4xl mx-auto rounded-2xl border border-slate-200 bg-white/80 shadow-sm p-4 md:p-6 space-y-4"
+        className="w-full max-w-4xl mx-auto rounded-2xl border border-slate-200 bg-white/90 shadow-sm p-3 md:p-4 space-y-3"
       >
         {/* Title */}
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg md:text-xl font-semibold text-slate-900">
+          <h2 className="text-base md:text-lg font-semibold text-slate-900">
             Production Header (Today)
           </h2>
-          <p className="text-xs text-slate-500">
-            Fill today&apos;s production planning and manpower details.
+          <p className="text-[11px] text-slate-500">
+            Quick production & manpower summary.
           </p>
         </div>
 
         {/* Messages */}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-2 py-1.5">
             {error}
           </div>
         )}
         {success && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+          <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1.5">
             {success}
           </div>
         )}
 
         {/* Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <Field
             label="Operator TO"
             name="operatorTo"
             value={form.operatorTo}
             onChange={handleChange}
-            placeholder="e.g. 32"
+            placeholder="32"
           />
           <Field
             label="Manpower Present"
             name="manpowerPresent"
             value={form.manpowerPresent}
             onChange={handleChange}
-            placeholder="e.g. 30"
+            placeholder="30"
           />
           <Field
             label="Manpower Absent"
             name="manpowerAbsent"
             value={form.manpowerAbsent}
             onChange={handleChange}
-            placeholder="e.g. 2"
+            placeholder="2"
           />
           <Field
             label="Working Hour"
             name="workingHour"
             value={form.workingHour}
             onChange={handleChange}
-            placeholder="e.g. 8"
+            placeholder="8"
           />
           <Field
             label="Plan Quantity"
             name="planQuantity"
             value={form.planQuantity}
             onChange={handleChange}
-            placeholder="e.g. 1200"
+            placeholder="2000"
           />
           <Field
             label="Plan Efficiency (%)"
             name="planEfficiency"
             value={form.planEfficiency}
             onChange={handleChange}
-            placeholder="e.g. 85"
+            placeholder="90"
           />
-          {/* ✅ NEW SMV FIELD */}
           <Field
             label="SMV"
             name="smv"
             value={form.smv}
             onChange={handleChange}
-            placeholder="e.g. 1.2"
+            placeholder="1.2"
           />
           <Field
             label="Today Target"
             name="todayTarget"
             value={form.todayTarget}
             onChange={handleChange}
-            placeholder="e.g. 1100"
+            placeholder="1000"
           />
           <Field
             label="Achieve (optional)"
             name="achieve"
             value={form.achieve}
             onChange={handleChange}
-            placeholder="Leave blank to fill later"
+            placeholder="700"
           />
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap justify-end gap-2 pt-2">
+        <div className="flex flex-wrap justify-end gap-2 pt-1">
           <button
             type="button"
             onClick={resetForm}
-            className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-300 text-slate-700 hover:bg-slate-50"
             disabled={busy}
           >
             Clear
           </button>
 
-          {/* Delete only when record exists */}
           <button
             type="button"
             onClick={handleDelete}
-            className="px-4 py-2 rounded-lg text-sm font-semibold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-60"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-60"
             disabled={busy || !isExisting}
           >
             {deleting ? "Deleting..." : "Delete"}
@@ -338,7 +335,7 @@ export default function ProductionInputForm() {
 
           <button
             type="submit"
-            className="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-70"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-70"
             disabled={busy}
           >
             {saving
@@ -355,13 +352,13 @@ export default function ProductionInputForm() {
   );
 }
 
-// 🔹 Reusable field
+// 🔹 Compact reusable field
 function Field({ label, name, value, onChange, placeholder }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
       <label
         htmlFor={name}
-        className="text-xs font-medium uppercase tracking-wide text-slate-600"
+        className="text-[11px] font-medium uppercase tracking-wide text-slate-600"
       >
         {label}
       </label>
@@ -370,8 +367,8 @@ function Field({ label, name, value, onChange, placeholder }) {
         name={name}
         value={value}
         onChange={onChange}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-inner
-                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+        className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
         placeholder={placeholder}
       />
     </div>
