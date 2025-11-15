@@ -12,14 +12,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-6">
           <Image
-            src="/1630632533544 (2).jpg"
+            src="/ChatGPT Image Nov 14, 2025, 08_47_05 PM.png"
             alt="HKD Outdoor Innovations Ltd. Logo"
             width={80}
             height={80}
-            className="rounded-full mb-3 shadow-md"
+            className="rounded-3xl mb-3 shadow-md"
             priority
           />
-          <h1 className="text-xl font-semibold text-gray-800">
+          <h1 className="text-xl  text-indigo-600 font-extrabold ">
             HKD Outdoor Innovations Ltd.
           </h1>
         </div>

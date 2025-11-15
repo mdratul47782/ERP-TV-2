@@ -14,6 +14,7 @@ export default function MediaLinksEditor() {
   const [savedData, setSavedData] = useState(null);
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false); // ⬅️ NEW
 
   // Fetch existing media links on mount
   useEffect(() => {
@@ -76,14 +77,20 @@ export default function MediaLinksEditor() {
 
   const handleSave = async () => {
     setStatus(null);
+    setSaving(true); // ⬅️ start saving
 
     if (!imageOk || !videoOk) {
-      setStatus({ type: "error", msg: "Please enter valid URLs or upload files." });
+      setStatus({
+        type: "error",
+        msg: "Please enter valid URLs or upload files.",
+      });
+      setSaving(false);
       return;
     }
 
     if (!auth?.id || !auth?.user_name) {
       setStatus({ type: "error", msg: "Missing user information." });
+      setSaving(false);
       return;
     }
 
@@ -126,6 +133,8 @@ export default function MediaLinksEditor() {
     } catch (error) {
       console.error(error);
       setStatus({ type: "error", msg: error.message });
+    } finally {
+      setSaving(false); // ⬅️ stop saving
     }
   };
 
@@ -146,7 +155,7 @@ export default function MediaLinksEditor() {
 
   if (!auth) {
     return (
-      <div className="text-center text-red-500 py-6 text-sm">
+      <div className="py-6 text-center text-sm text-red-500">
         Please log in to manage media links.
       </div>
     );
@@ -154,36 +163,40 @@ export default function MediaLinksEditor() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-4xl mx-auto p-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg animate-pulse">
-          <div className="h-4 w-32 bg-slate-700 rounded mb-4" />
-          <div className="h-32 w-full bg-slate-800 rounded mb-2" />
-          <div className="h-3 w-24 bg-slate-700 rounded" />
+      <div className="mx-auto w-full max-w-4xl p-4">
+        <div className="animate-pulse rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg">
+          <div className="mb-4 h-4 w-32 rounded bg-slate-700" />
+          <div className="mb-2 h-32 w-full rounded bg-slate-800" />
+          <div className="h-3 w-24 rounded bg-slate-700" />
         </div>
       </div>
     );
   }
 
+  const saveButtonLabel =
+    saving ? "Saving..." : status?.type === "ok" ? "Saved" : "Save changes";
+
   return (
-    <div className="w-full max-w-5xl mx-auto p-4">
+    <div className="mx-auto w-full max-w-5xl p-4">
       <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-5 shadow-xl">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-slate-50 flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-slate-50">
               Media Manager
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-700/40">
+              <span className="rounded-full border border-emerald-700/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300">
                 {auth.user_name || "User"}
               </span>
             </h2>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Upload an image and a video or use direct URLs. These links will be used in other components.
+            <p className="mt-1 text-[11px] text-slate-400">
+              Upload an image and a video or use direct URLs. These links will
+              be used in other components.
             </p>
           </div>
 
           {!editing ? (
             <button
-              className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-medium bg-slate-100 text-slate-900 hover:bg-white transition"
+              className="inline-flex items-center rounded-full bg-slate-100 px-4 py-1.5 text-xs font-medium text-slate-900 transition hover:bg-white"
               onClick={() => setEditing(true)}
             >
               Edit media
@@ -191,15 +204,16 @@ export default function MediaLinksEditor() {
           ) : (
             <div className="flex gap-2">
               <button
-                className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-60 transition"
+                className="inline-flex items-center rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-60"
                 onClick={handleSave}
-                disabled={!imageOk || !videoOk}
+                disabled={!imageOk || !videoOk || saving}
               >
-                Save changes
+                {saveButtonLabel}
               </button>
               <button
-                className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-medium bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+                className="inline-flex items-center rounded-full bg-slate-800 px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-700"
                 onClick={handleCancel}
+                disabled={saving}
               >
                 Cancel
               </button>
@@ -221,9 +235,9 @@ export default function MediaLinksEditor() {
         )}
 
         {/* Content layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* IMAGE COLUMN */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+          <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h3 className="text-xs font-semibold text-slate-100">Image</h3>
@@ -232,12 +246,12 @@ export default function MediaLinksEditor() {
                 </p>
               </div>
               {imageSrc && !imageFile && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
                   From URL
                 </span>
               )}
               {imageFile && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">
+                <span className="rounded-full bg-emerald-600/20 px-2 py-0.5 text-[10px] text-emerald-300">
                   Local file
                 </span>
               )}
@@ -247,9 +261,12 @@ export default function MediaLinksEditor() {
               <>
                 {/* URL input */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] text-slate-300 block">
+                  <label className="block text-[11px] text-slate-300">
                     Image URL
-                    <span className="text-slate-500"> (optional if you upload a file)</span>
+                    <span className="text-slate-500">
+                      {" "}
+                      (optional if you upload a file)
+                    </span>
                   </label>
                   <input
                     type="url"
@@ -259,7 +276,7 @@ export default function MediaLinksEditor() {
                       setImageSrc(e.target.value);
                       if (e.target.value) setImageFile(null);
                     }}
-                    className={`w-full rounded-lg border bg-slate-950 text-slate-100 px-3 py-1.5 text-xs outline-none transition ${
+                    className={`w-full rounded-lg border bg-slate-950 px-3 py-1.5 text-xs text-slate-100 outline-none transition ${
                       imageOk
                         ? "border-slate-700 focus:border-emerald-500"
                         : "border-rose-500"
@@ -269,11 +286,11 @@ export default function MediaLinksEditor() {
 
                 {/* File input */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] text-slate-300 block">
+                  <label className="block text-[11px] text-slate-300">
                     Upload Image
                   </label>
                   <div className="flex items-center gap-3">
-                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-dashed border-slate-600 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 hover:border-emerald-500 hover:bg-slate-900/80 transition">
+                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-dashed border-slate-600 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 transition hover:border-emerald-500 hover:bg-slate-900/80">
                       <span>Choose file</span>
                       <input
                         type="file"
@@ -289,7 +306,7 @@ export default function MediaLinksEditor() {
                       />
                     </label>
                     {imageFile && (
-                      <span className="text-[11px] text-slate-400 truncate max-w-[140px]">
+                      <span className="max-w-[140px] truncate text-[11px] text-slate-400">
                         {imageFile.name}
                       </span>
                     )}
@@ -304,20 +321,22 @@ export default function MediaLinksEditor() {
                     href={imageSrc}
                     target="_blank"
                     rel="noreferrer"
-                    className="block text-[11px] text-emerald-300 underline break-all"
+                    className="block break-all text-[11px] text-emerald-300 underline"
                   >
                     {imageSrc}
                   </a>
                 ) : (
-                  <span className="text-[11px] text-slate-500">No image set</span>
+                  <span className="text-[11px] text-slate-500">
+                    No image set
+                  </span>
                 )}
               </div>
             )}
 
             {/* Image preview */}
             <div className="pt-2">
-              <div className="text-[11px] text-slate-400 mb-1.5">Preview</div>
-              <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950 flex items-center justify-center">
+              <div className="mb-1.5 text-[11px] text-slate-400">Preview</div>
+              <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -334,7 +353,7 @@ export default function MediaLinksEditor() {
           </div>
 
           {/* VIDEO COLUMN */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+          <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h3 className="text-xs font-semibold text-slate-100">Video</h3>
@@ -343,12 +362,12 @@ export default function MediaLinksEditor() {
                 </p>
               </div>
               {videoSrc && !videoFile && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300">
                   From URL
                 </span>
               )}
               {videoFile && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">
+                <span className="rounded-full bg-emerald-600/20 px-2 py-0.5 text-[10px] text-emerald-300">
                   Local file
                 </span>
               )}
@@ -358,9 +377,12 @@ export default function MediaLinksEditor() {
               <>
                 {/* URL input */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] text-slate-300 block">
+                  <label className="block text-[11px] text-slate-300">
                     Video URL
-                    <span className="text-slate-500"> (optional if you upload a file)</span>
+                    <span className="text-slate-500">
+                      {" "}
+                      (optional if you upload a file)
+                    </span>
                   </label>
                   <input
                     type="url"
@@ -370,7 +392,7 @@ export default function MediaLinksEditor() {
                       setVideoSrc(e.target.value);
                       if (e.target.value) setVideoFile(null);
                     }}
-                    className={`w-full rounded-lg border bg-slate-950 text-slate-100 px-3 py-1.5 text-xs outline-none transition ${
+                    className={`w-full rounded-lg border bg-slate-950 px-3 py-1.5 text-xs text-slate-100 outline-none transition ${
                       videoOk
                         ? "border-slate-700 focus:border-emerald-500"
                         : "border-rose-500"
@@ -380,11 +402,11 @@ export default function MediaLinksEditor() {
 
                 {/* File input */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] text-slate-300 block">
+                  <label className="block text-[11px] text-slate-300">
                     Upload Video
                   </label>
                   <div className="flex items-center gap-3">
-                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-dashed border-slate-600 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 hover:border-emerald-500 hover:bg-slate-900/80 transition">
+                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-dashed border-slate-600 bg-slate-900 px-3 py-1.5 text-[11px] text-slate-200 transition hover:border-emerald-500 hover:bg-slate-900/80">
                       <span>Choose file</span>
                       <input
                         type="file"
@@ -400,7 +422,7 @@ export default function MediaLinksEditor() {
                       />
                     </label>
                     {videoFile && (
-                      <span className="text-[11px] text-slate-400 truncate max-w-[140px]">
+                      <span className="max-w-[140px] truncate text-[11px] text-slate-400">
                         {videoFile.name}
                       </span>
                     )}
@@ -415,20 +437,22 @@ export default function MediaLinksEditor() {
                     href={videoSrc}
                     target="_blank"
                     rel="noreferrer"
-                    className="block text-[11px] text-emerald-300 underline break-all"
+                    className="block break-all text-[11px] text-emerald-300 underline"
                   >
                     {videoSrc}
                   </a>
                 ) : (
-                  <span className="text-[11px] text-slate-500">No video set</span>
+                  <span className="text-[11px] text-slate-500">
+                    No video set
+                  </span>
                 )}
               </div>
             )}
 
             {/* Video preview */}
             <div className="pt-2">
-              <div className="text-[11px] text-slate-400 mb-1.5">Preview</div>
-              <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950 flex items-center justify-center">
+              <div className="mb-1.5 text-[11px] text-slate-400">Preview</div>
+              <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
                 {videoPreview ? (
                   <video
                     src={videoPreview}
@@ -448,9 +472,9 @@ export default function MediaLinksEditor() {
         </div>
 
         {/* Tiny helper note */}
-        <p className="mt-4 text-[10px] text-slate-500 text-right">
+        <p className="mt-4 text-right text-[10px] text-slate-500">
           Tip: In your other components you can auto-play this video via{" "}
-          <code className="bg-slate-900 px-1 py-0.5 rounded border border-slate-700">
+          <code className="rounded border border-slate-700 bg-slate-900 px-1 py-0.5">
             &lt;video src=&#123;videoSrc&#125; autoPlay muted loop /&gt;
           </code>
         </p>
