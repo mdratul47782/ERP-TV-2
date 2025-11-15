@@ -64,15 +64,30 @@ export default function NavBar() {
          : "text-slate-700 hover:text-slate-900 hover:bg-black/5 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10"
      }`;
 
-  // 🔵 Distinct style for Login button on the right
-  const loginButtonClass = (active) =>
-    `px-3 py-1.5 rounded-md text-sm font-semibold shadow-sm
-     focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
-     ${
-       active
-         ? "bg-indigo-700 text-white"
-         : "bg-indigo-600 text-white hover:bg-indigo-700"
-     }`;
+  // 🔵 Base style for the auth button (Login/Logout)
+  const baseAuthButtonClass = `
+    px-3 py-1.5 rounded-md text-sm font-semibold shadow-sm
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
+  `;
+
+  // ✅ Treat "logged in" as auth not null/undefined
+  const isLoggedIn = auth !== null && auth !== undefined;
+
+  // 🔁 Compute class based on auth state
+  const authButtonClass = (active) => {
+    if (isLoggedIn) {
+      // Logout → red
+      return `
+        ${baseAuthButtonClass}
+        ${active ? "bg-red-700 text-white" : "bg-red-600 text-white hover:bg-red-700"}
+      `;
+    }
+    // Login → indigo
+    return `
+      ${baseAuthButtonClass}
+      ${active ? "bg-indigo-700 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"}
+    `;
+  };
 
   // Translate logic:
   const navTranslateClass = !isHoverDevice
@@ -134,7 +149,7 @@ export default function NavBar() {
               </span>
             </Link>
 
-            {/* Center links (Login removed from here) */}
+            {/* Center links */}
             <ul className="flex flex-wrap items-center gap-1 md:gap-2">
               <li>
                 <Link
@@ -182,7 +197,7 @@ export default function NavBar() {
               </li>
             </ul>
 
-            {/* Right side: user chip + Login button */}
+            {/* Right side: user chip + Login/Logout button */}
             <div className="flex items-center gap-2">
               <div className="hidden items-center gap-2 md:flex">
                 <span className="material-symbols-outlined text-base text-slate-600 dark:text-gray-300">
@@ -196,13 +211,13 @@ export default function NavBar() {
                 </span>
               </div>
 
-              {/* Login button moved here, different color */}
+              {/* Login / Logout button */}
               <Link
                 href={PATHS.login}
-                className={loginButtonClass(isActive(PATHS.login))}
+                className={authButtonClass(isActive(PATHS.login))}
                 aria-current={isActive(PATHS.login) ? "page" : undefined}
               >
-                Login
+                {isLoggedIn ? "Logout" : "Login"}
               </Link>
             </div>
           </div>
