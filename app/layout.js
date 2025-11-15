@@ -37,6 +37,7 @@ export default async function RootLayout({ children }) {
           {children}
         </AuthProvider>
       </body>
+      
     </html>
   );
 }
