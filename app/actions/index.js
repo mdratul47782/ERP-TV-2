@@ -1,6 +1,6 @@
 "use server";
 
-import { createUser, findUserByCredentials } from "@/db/queries";
+import { createUser, createProductionUser,findUserByCredentials } from "@/db/queries";
 import { redirect } from "next/navigation";
 
 async function registerUser(formData) {
@@ -8,6 +8,13 @@ async function registerUser(formData) {
   await createUser(user);
   redirect("/login");
 }
+
+async function ProductionRegisterUser(formData) {
+  const ProductionUser = Object.fromEntries(formData);
+  await createProductionUser(ProductionUser);
+  redirect("/ProductionLogin");
+}
+
 
 async function PerformLogin(formData) {
 
@@ -24,4 +31,4 @@ async function PerformLogin(formData) {
 
   
 
-export { registerUser, PerformLogin };
+export { registerUser, PerformLogin ,ProductionRegisterUser};
