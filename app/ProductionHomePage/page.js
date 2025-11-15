@@ -1,14 +1,9 @@
-import ProductionSignInOut from "../components/auth/ProductionSignInOut";
-import HourlyProductionInput from "@/app/ProductionComponents/HourlyProductionInput"
-export default function ProductionHomePage(){
-    return (
-        <div>
-            <ProductionSignInOut/>
-            <HourlyProductionInput/>
-
-
-        </div>
-
-
-    );
+import HourlyProductionInput from "@/app/ProductionComponents/HourlyProductionInput";
+import { RegisterModel } from "@/models/register-model";
+export default function ProductionHomePage() {
+  return (
+    <div>
+      <HourlyProductionInput />
+    </div>
+  );
 }
