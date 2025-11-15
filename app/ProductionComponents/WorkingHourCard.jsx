@@ -37,7 +37,7 @@ export default function WorkingHourCard({ header }) {
   // 🔹 Guard: no header
   if (!h) {
     return (
-      <div className="w-full max-w-6xl mx-auto rounded-xl border border-gray-300 bg-white shadow-sm p-4 text-xs">
+      <div className="rounded-2xl border border-gray-300 bg-white shadow-sm p-4 text-xs">
         No production header found. Please save a header first.
       </div>
     );
@@ -122,20 +122,15 @@ export default function WorkingHourCard({ header }) {
       ? (achievedThisHour * smv * 100) / (manpowerPresent * 60)
       : 0;
 
-  // 🔹 Achieve Efficiency (for this line up to this working hour)
-  //   Formula you gave:
-  //   Hourly Output * SMV / Manpower * 60 * Working Hour
-  //   Interpreted as:
-  //   (Hourly Output * SMV) / (Manpower * 60) * Working Hour
+  // 🔹 Achieve Efficiency (front preview)
+  //   Hourly Output * SMV / (Manpower * 60) * Working Hour
   const achieveEfficiency =
     manpowerPresent > 0 && smv > 0
       ? (achievedThisHour * smv * selectedHour) /
         (manpowerPresent * 60)
       : 0;
 
-  // 🔹 Carry-over logic (shortfall / surplus) to show dynamic target
-
-  // Shortfall till previous hours for the currently selected hour
+  // 🔹 Carry-over shortfall to show dynamic target
   const shortfallUntilPrev = hourlyRecords.reduce((sum, rec) => {
     if (typeof rec.hour !== "number" || rec.hour >= selectedHour) {
       return sum;
@@ -147,12 +142,11 @@ export default function WorkingHourCard({ header }) {
     return sum + (dynSafe - achSafe);
   }, 0);
 
-  // Dynamic target for THIS hour
   const dynamicTargetThisHour = baseTargetPerHour + shortfallUntilPrev;
 
   if (productionLoading) {
     return (
-      <div className="w-full max-w-6xl mx-auto rounded-xl border border-gray-300 bg-white shadow-sm p-4 text-xs">
+      <div className="rounded-2xl border border-gray-300 bg-white shadow-sm p-4 text-xs">
         Loading production user...
       </div>
     );
@@ -160,7 +154,7 @@ export default function WorkingHourCard({ header }) {
 
   if (!ProductionAuth) {
     return (
-      <div className="w-full max-w-6xl mx-auto rounded-xl border border-yellow-300 bg-yellow-50 shadow-sm p-4 text-xs">
+      <div className="rounded-2xl border border-yellow-300 bg-yellow-50 shadow-sm p-4 text-xs">
         No production user logged in. Please sign in to see working hour
         details.
       </div>
@@ -169,7 +163,7 @@ export default function WorkingHourCard({ header }) {
 
   if (!isMatched) {
     return (
-      <div className="w-full max-w-6xl mx-auto rounded-xl border border-rose-300 bg-rose-50 shadow-sm p-4 text-xs space-y-1.5">
+      <div className="rounded-2xl border border-rose-300 bg-rose-50 shadow-sm p-4 text-xs space-y-1.5">
         <div className="font-semibold text-rose-700">
           Header does not belong to the logged-in production user.
         </div>
@@ -268,9 +262,9 @@ export default function WorkingHourCard({ header }) {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto rounded-xl border border-gray-300 bg-white shadow-sm p-4">
+    <div className="rounded-2xl border border-gray-300 bg-white shadow-sm p-4 space-y-3">
       {/* Header */}
-      <div className="mb-3 border-b pb-2 flex items-center justify-between text-xs">
+      <div className="border-b pb-2 flex items-center justify-between text-xs">
         <div className="font-semibold tracking-wide uppercase">
           Working Hour
         </div>
@@ -288,7 +282,7 @@ export default function WorkingHourCard({ header }) {
 
       {/* Messages */}
       {(error || message) && (
-        <div className="mb-3 text-[11px]">
+        <div className="text-[11px]">
           {error && (
             <div className="mb-1 rounded border border-red-200 bg-red-50 px-2 py-1 text-red-700">
               {error}
@@ -303,7 +297,7 @@ export default function WorkingHourCard({ header }) {
       )}
 
       {/* Summary values */}
-      <div className="mb-3 text-[11px] text-slate-600 flex flex-wrap gap-4">
+      <div className="text-[11px] text-slate-600 flex flex-wrap gap-4">
         <div>Present Manpower: {manpowerPresent}</div>
         <div>SMV (min/pc): {smv}</div>
         <div>Plan Efficiency: {planEfficiencyPercent}%</div>
@@ -404,7 +398,7 @@ export default function WorkingHourCard({ header }) {
                 </p>
               </td>
 
-              {/* Achieve Efficiency */}
+              {/* Achieve Efficiency (preview) */}
               <td className="px-2 py-2 align-top">
                 <div className="rounded border bg-gray-50 px-2 py-1">
                   {formatNumber(achieveEfficiency)}
@@ -419,7 +413,7 @@ export default function WorkingHourCard({ header }) {
       </div>
 
       {/* Actions */}
-      <div className="mt-3 flex items-center justify-end gap-2 text-xs">
+      <div className="flex items-center justify-end gap-2 text-xs">
         <button
           type="button"
           onClick={handleSave}
@@ -444,71 +438,68 @@ export default function WorkingHourCard({ header }) {
         </button>
       </div>
 
-     {/* Posted hourly data */}
-<div className="mt-4">
-  <div className="flex items-center justify-between text-xs mb-2">
-    <h3 className="font-semibold">Posted hourly records</h3>
-    {loadingRecords && (
-      <span className="text-[10px] text-slate-500">
-        Loading hourly records...
-      </span>
-    )}
-  </div>
+      {/* Posted hourly data */}
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs mb-2">
+          <h3 className="font-semibold">Posted hourly records</h3>
+          {loadingRecords && (
+            <span className="text-[10px] text-slate-500">
+              Loading hourly records...
+            </span>
+          )}
+        </div>
 
-  {hourlyRecords.length === 0 ? (
-    <p className="text-[11px] text-slate-500">
-      No hourly records saved yet for this header.
-    </p>
-  ) : (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[11px] border-t">
-        <thead>
-          <tr className="bg-slate-50">
-            <th className="px-2 py-1 text-left">Hour</th>
-            <th className="px-2 py-1 text-left">Dynamic Target</th>
-            <th className="px-2 py-1 text-left">Achieved</th>
-            <th className="px-2 py-1 text-left">Variance</th>
-            <th className="px-2 py-1 text-left">Hourly Eff %</th>
-            <th className="px-2 py-1 text-left">Achieve Eff</th>
-            <th className="px-2 py-1 text-left">Total Eff %</th>
-            <th className="px-2 py-1 text-left">Updated At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {hourlyRecords.map((rec) => (
-            <tr key={rec._id} className="border-b">
-              <td className="px-2 py-1">{rec.hour}</td>
-              <td className="px-2 py-1">
-                {formatNumber(rec.dynamicTarget)}
-              </td>
-              <td className="px-2 py-1">{rec.achievedQty}</td>
-              <td className="px-2 py-1">
-                {formatNumber(rec.varianceQty)}
-              </td>
-              <td className="px-2 py-1">
-                {formatNumber(rec.hourlyEfficiency)}
-              </td>
-              {/* 🔹 stored Achieve Efficiency from API */}
-              <td className="px-2 py-1">
-                {formatNumber(rec.achieveEfficiency)}
-              </td>
-              {/* 🔹 totalEfficiency (currently same as achieveEfficiency) */}
-              <td className="px-2 py-1">
-                {formatNumber(rec.totalEfficiency)}
-              </td>
-              <td className="px-2 py-1">
-                {rec.updatedAt
-                  ? new Date(rec.updatedAt).toLocaleTimeString()
-                  : "-"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
-</div>
-
+        {hourlyRecords.length === 0 ? (
+          <p className="text-[11px] text-slate-500">
+            No hourly records saved yet for this header.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] border-t">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="px-2 py-1 text-left">Hour</th>
+                  <th className="px-2 py-1 text-left">Dynamic Target</th>
+                  <th className="px-2 py-1 text-left">Achieved</th>
+                  <th className="px-2 py-1 text-left">Variance</th>
+                  <th className="px-2 py-1 text-left">Hourly Eff %</th>
+                  <th className="px-2 py-1 text-left">Achieve Eff</th>
+                  <th className="px-2 py-1 text-left">Total Eff %</th>
+                  <th className="px-2 py-1 text-left">Updated At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hourlyRecords.map((rec) => (
+                  <tr key={rec._id} className="border-b">
+                    <td className="px-2 py-1">{rec.hour}</td>
+                    <td className="px-2 py-1">
+                      {formatNumber(rec.dynamicTarget)}
+                    </td>
+                    <td className="px-2 py-1">{rec.achievedQty}</td>
+                    <td className="px-2 py-1">
+                      {formatNumber(rec.varianceQty)}
+                    </td>
+                    <td className="px-2 py-1">
+                      {formatNumber(rec.hourlyEfficiency)}
+                    </td>
+                    <td className="px-2 py-1">
+                      {formatNumber(rec.achieveEfficiency)}
+                    </td>
+                    <td className="px-2 py-1">
+                      {formatNumber(rec.totalEfficiency)}
+                    </td>
+                    <td className="px-2 py-1">
+                      {rec.updatedAt
+                        ? new Date(rec.updatedAt).toLocaleTimeString()
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

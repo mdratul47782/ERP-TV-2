@@ -1,8 +1,8 @@
 // app/components/ProductionInputForm.jsx
 "use client";
 
-import ProductionSignInOut from "../components/auth/ProductionSignInOut";
 import { useEffect, useState } from "react";
+import ProductionSignInOut from "../components/auth/ProductionSignInOut";
 import { useProductionAuth } from "../hooks/useProductionAuth";
 import { useAuth } from "../hooks/useAuth";
 
@@ -60,7 +60,7 @@ export default function ProductionInputForm() {
       smv: "",
     });
 
-  // 🔹 Load today's header once ProductionAuth is ready
+  // 🔹 Load today's header for this production user
   useEffect(() => {
     if (productionLoading) return;
     if (!ProductionAuth?.id) return;
@@ -218,15 +218,18 @@ export default function ProductionInputForm() {
   const isExisting = Boolean(headerId);
 
   return (
-    <>
+    <div className="space-y-3">
+      {/* Auth widget */}
       <ProductionSignInOut />
+
+      {/* Card */}
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-4xl mx-auto rounded-2xl border border-slate-200 bg-white/90 shadow-sm p-3 md:p-4 space-y-3"
+        className="rounded-2xl border border-slate-200 bg-white/90 shadow-sm p-3 md:p-4 space-y-3"
       >
         {/* Title */}
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base md:text-lg font-semibold text-slate-900">
+          <h2 className="text-sm md:text-base font-semibold text-slate-900">
             Production Header (Today)
           </h2>
           <p className="text-[11px] text-slate-500">
@@ -313,7 +316,7 @@ export default function ProductionInputForm() {
           />
         </div>
 
-        {/* Footer */}
+        {/* Footer buttons */}
         <div className="flex flex-wrap justify-end gap-2 pt-1">
           <button
             type="button"
@@ -348,7 +351,7 @@ export default function ProductionInputForm() {
           </button>
         </div>
       </form>
-    </>
+    </div>
   );
 }
 
