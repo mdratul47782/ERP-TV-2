@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProductionRegisterUser } from "@/app/actions";
+
 export default function ProductionRegistrationForm() {
   return (
     <section className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-50 via-white to-indigo-100">

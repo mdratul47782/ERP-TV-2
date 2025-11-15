@@ -1,13 +1,39 @@
-export default function ProductionLogin(){
-    return (
-        <form  className="space-y-5">
+"use client";
+import { useState } from "react";
+import { PerformProductionLogin } from "@/app/actions";
+import { useRouter } from "next/navigation";
+export default function ProductionLoginForm() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  async function onSubmit(event) {
+    event.preventDefault();
+    try {
+      const formData = new FormData(event.currentTarget);
+      const found = await PerformProductionLogin(formData);
+      if (found) {
+        router.push("/");
+      } else {
+        setError("Please provide valid login credentials");
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+  return (
+    <>
+      {error && (
+        <div className="my-2 text-sm text-red-600 text-center font-medium">
+          {error}
+        </div>
+      )}
+      <form className="space-y-5" onSubmit={onSubmit}>
         {/* Username Field */}
         <div>
           <label
             htmlFor="Production_user_name"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Producttion User Name
+            Production User Name
           </label>
           <input
             type="text"
@@ -45,5 +71,6 @@ export default function ProductionLogin(){
           Login
         </button>
       </form>
-    );
+    </>
+  );
 }
