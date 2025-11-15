@@ -1,24 +1,40 @@
+// app/components/ProductionLoginForm.jsx
 "use client";
+
 import { useState } from "react";
-import { PerformProductionLogin } from "@/app/actions";
 import { useRouter } from "next/navigation";
+import { PerformProductionLogin } from "@/app/actions";
+import { useProductionAuth } from "@/app/hooks/useProductionAuth";
+
 export default function ProductionLoginForm() {
   const router = useRouter();
+  const { setProductionAuth } = useProductionAuth();
   const [error, setError] = useState("");
+
+  // 🔹 Handle login submit
   async function onSubmit(event) {
     event.preventDefault();
+    setError("");
+
     try {
       const formData = new FormData(event.currentTarget);
       const found = await PerformProductionLogin(formData);
+
       if (found) {
-        router.push("/");
+        // ✅ Save user in context so ProductionSignInOut can read it
+        setProductionAuth(found);
+
+        // Redirect after setting auth
+        router.push("/ProductionHomePage");
       } else {
         setError("Please provide valid login credentials");
       }
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err.message || "Something went wrong. Please try again.");
     }
   }
+
   return (
     <>
       {error && (
@@ -26,6 +42,7 @@ export default function ProductionLoginForm() {
           {error}
         </div>
       )}
+
       <form className="space-y-5" onSubmit={onSubmit}>
         {/* Username Field */}
         <div>
