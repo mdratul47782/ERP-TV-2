@@ -2,10 +2,10 @@
 import { dbConnect } from "@/services/mongo";
 import { ProductionHeaderModel } from "@/models/ProductionHeader-model";
 
-// 🔹 Today as "YYYY-MM-DD"
+// 🔹 Today as "YYYY-MM-DD" (UTC fallback; UI should pass productionDate explicitly)
 function getTodayDateString() {
   const now = new Date();
-  return now.toISOString().slice(0, 10); // e.g. "2025-11-15"
+  return now.toISOString().slice(0, 10);
 }
 
 // 🔹 Optional number: allow blank
@@ -35,6 +35,7 @@ export async function GET(request) {
       );
     }
 
+    // 🔹 Strictly fetch today's (or the given) record
     const header = await ProductionHeaderModel.findOne({
       "productionUser.id": productionUserId,
       productionDate: date,
@@ -71,10 +72,10 @@ export async function POST(request) {
       planEfficiency,
       todayTarget,
       achieve,
-      smv, // ✅ NEW
+      smv,
       productionUser,
       qualityUser,
-      productionDate, // optional from client
+      productionDate, // 🔹 from client to bind to a specific local day
     } = body;
 
     if (!productionUser || !productionUser.id) {
@@ -105,7 +106,7 @@ export async function POST(request) {
       ),
       todayTarget: parseOptionalNumber(todayTarget, "todayTarget", errors),
       achieve: parseOptionalNumber(achieve, "achieve", errors),
-      smv: parseOptionalNumber(smv, "smv", errors), // ✅ NEW
+      smv: parseOptionalNumber(smv, "smv", errors),
 
       // Production user snapshot (no password)
       productionUser: {

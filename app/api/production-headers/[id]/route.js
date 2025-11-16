@@ -15,19 +15,12 @@ function parseOptionalNumber(value, fieldName, errors) {
 
 // 🔹 Robust helper: get id from context OR from URL path
 function getIdFromContextOrUrl(request, context) {
-  // 1) Next App Router typical shape: { params: { id: "..." } }
-  const fromParams =
-    context?.params?.id ??
-    // 2) Just in case someone passes { id: "..." } directly
-    context?.id;
-
+  const fromParams = context?.params?.id ?? context?.id;
   if (fromParams) return fromParams;
 
-  // 3) Fallback: parse from URL path /api/production-headers/:id
   try {
     const url = new URL(request.url);
-    const parts = url.pathname.split("/").filter(Boolean); // remove empty
-    // e.g. ["api", "production-headers", "6918..."]
+    const parts = url.pathname.split("/").filter(Boolean);
     return parts[parts.length - 1];
   } catch {
     return undefined;
@@ -91,7 +84,7 @@ export async function PATCH(request, context) {
       "planEfficiency",
       "todayTarget",
       "achieve",
-      "smv", // ✅ allow updating SMV
+      "smv",
     ];
 
     for (const field of fields) {

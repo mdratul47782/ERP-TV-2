@@ -1,59 +1,55 @@
 // models/ProductionHeader-model.js
-import mongoose, { Schema, models, model } from "mongoose";
+import mongoose from "mongoose";
 
-// 🔹 We'll store snapshots of both users (no password)
-const EmbeddedUserSchema = new Schema(
+const ProductionUserSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
-    user_name: { type: String }, // for quality user
-    Production_user_name: { type: String }, // for production user
-    phone: { type: String },
-    bio: { type: String },
+    Production_user_name: String,
+    phone: String,
+    bio: String,
   },
   { _id: false }
 );
 
-const ProductionHeaderSchema = new Schema(
+const QualityUserSchema = new mongoose.Schema(
   {
-    // 🔹 One record per production user per day
-    productionDate: {
-      type: String, // "YYYY-MM-DD"
-      required: true,
-    },
-
-    // 🔹 All fields optional – user may leave blank
-    operatorTo: { type: Number },
-    manpowerPresent: { type: Number },
-    manpowerAbsent: { type: Number },
-    workingHour: { type: Number },
-    planQuantity: { type: Number },
-    planEfficiency: { type: Number },
-    smv: { type: Number }, // ✅ NEW
-    todayTarget: { type: Number },
-    achieve: { type: Number },
-
-    // 🔹 Production user snapshot
-    productionUser: {
-      type: EmbeddedUserSchema,
-      required: true,
-    },
-
-    // 🔹 Quality user snapshot (optional)
-    qualityUser: {
-      type: EmbeddedUserSchema,
-      required: false,
-    },
+    id: String,
+    user_name: String,
+    phone: String,
+    bio: String,
   },
-  {
-    timestamps: true, // createdAt + updatedAt
-  }
+  { _id: false }
 );
 
-// 🔹 Unique per production user + date
+const ProductionHeaderSchema = new mongoose.Schema(
+  {
+    // 🔹 YYYY-MM-DD in the end-user's local timezone
+    headerDate: { type: String, required: true },
+
+    // 🔹 Who this header belongs to (snapshot, no secrets)
+    productionUser: { type: ProductionUserSchema, required: true },
+    qualityUser: { type: QualityUserSchema },
+
+    // 🔹 Numbers you already collect
+    operatorTo: { type: Number, default: 0 },
+    manpowerPresent: { type: Number, default: 0 },
+    manpowerAbsent: { type: Number, default: 0 },
+    workingHour: { type: Number, default: 0 },
+    planQuantity: { type: Number, default: 0 },
+    planEfficiency: { type: Number, default: 0 },
+    todayTarget: { type: Number, default: 0 },
+    achieve: { type: Number, default: 0 },
+    smv: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+// 🔹 Enforce one header per day per production user
 ProductionHeaderSchema.index(
-  { "productionUser.id": 1, productionDate: 1 },
+  { "productionUser.id": 1, headerDate: 1 },
   { unique: true }
 );
 
 export const ProductionHeaderModel =
-  models.ProductionHeader || model("ProductionHeader", ProductionHeaderSchema);
+  mongoose.models.ProductionHeader ||
+  mongoose.model("ProductionHeader", ProductionHeaderSchema);

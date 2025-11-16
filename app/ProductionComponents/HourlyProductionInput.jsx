@@ -10,6 +10,15 @@ export default function ProductionInputForm() {
   const { ProductionAuth, loading: productionLoading } = useProductionAuth();
   const { auth, loading: authLoading } = useAuth();
 
+  // 🔹 Helper: local YYYY-MM-DD (client decides the day that operators see)
+  const getLocalDateKey = () => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   // 🔹 Main form state (includes smv)
   const [form, setForm] = useState({
     operatorTo: "",
@@ -71,8 +80,9 @@ export default function ProductionInputForm() {
         setError("");
         setSuccess("");
 
+        const dateKey = getLocalDateKey();
         const res = await fetch(
-          `/api/production-headers?productionUserId=${ProductionAuth.id}`
+          `/api/production-headers?productionUserId=${ProductionAuth.id}&date=${dateKey}`
         );
         const json = await res.json();
 
@@ -80,7 +90,9 @@ export default function ProductionInputForm() {
           fillFormFromHeader(json.data);
           setHeaderId(json.data._id);
         } else {
+          // 🔹 No header for today → ensure blank inputs
           setHeaderId(null);
+          resetForm();
         }
       } catch (err) {
         console.error(err);
@@ -135,10 +147,12 @@ export default function ProductionInputForm() {
     setSaving(true);
 
     try {
+      const dateKey = getLocalDateKey();
       const payload = {
         ...form,
         productionUser: buildProductionUserSnapshot(),
         qualityUser: buildQualityUserSnapshot(),
+        productionDate: dateKey, // 🔹 bind this record explicitly to "today"
       };
 
       const endpoint = isUpdate
