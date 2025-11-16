@@ -55,20 +55,22 @@ export default function TopThreeDefects({ hourlyData = [] }) {
   }, [hourlyData, userName, dayStart, dayEnd]);
 
   // 🧮 Calculate top 3 defects for that date
+   // 🧮 Calculate top 3 defects for that date
   const topDefects = useMemo(() => {
     const defectMap = {};
-    let totalInspected = 0;
+    let totalDefects = 0; // 🔹 total of ALL defect quantities
 
     dayUserData.forEach((entry) => {
-      const inspectedQty = entry?.inspectedQty ?? 0;
-      totalInspected += inspectedQty;
-
       (entry.selectedDefects || []).forEach((defect) => {
         if (!defect?.name) return;
+
+        const qty = Number(defect.quantity) || 0;
+        totalDefects += qty; // 🔹 accumulate total defects
+
         if (!defectMap[defect.name]) {
           defectMap[defect.name] = { quantity: 0 };
         }
-        defectMap[defect.name].quantity += defect.quantity || 0;
+        defectMap[defect.name].quantity += qty;
       });
     });
 
@@ -76,10 +78,10 @@ export default function TopThreeDefects({ hourlyData = [] }) {
       ([name, { quantity }]) => ({
         name,
         quantity,
-        // (defect qty / total inspected qty) × 100
+        // 🔹 percentage = this defect qty / total defects * 100
         percentage:
-          totalInspected > 0
-            ? ((quantity / totalInspected) * 100).toFixed(2)
+          totalDefects > 0
+            ? ((quantity / totalDefects) * 100).toFixed(2)
             : "0.00",
       })
     );
